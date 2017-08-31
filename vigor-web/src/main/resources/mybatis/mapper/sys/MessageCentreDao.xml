@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.vigor.modules.sys.dao.MessageCentreDao">
+    
+	<select id="findList" resultType="MessageCentre" >
+		SELECT 
+			a.message_id AS "messageId",
+			a.message_type AS "messageType",
+			a.message_status AS "messageStatus",
+			a.message_template AS "messageTemplate",
+			a.finish_time AS "finishTime",
+			a.receive_num AS "receiveNum",
+			a.copyto_num AS "copytoNum",
+			a.recipient_name AS "recipientName",
+			a.message_title AS "messageTitle",
+			a.message_content AS "messageContent"
+		FROM e_message_centre a
+		<where>
+			<if test="messageStatus != null and messageStatus != -2">
+				AND a.message_status = #{messageStatus}
+			</if>
+			AND a.finish_time BETWEEN #{startTime} and #{endTime}
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+			</otherwise>
+		</choose>
+	</select>
+	
+	<update id="updateStatus">
+		UPDATE e_message_centre SET 	
+			message_status = -1
+		WHERE message_id = #{messageId}
+	</update>
+</mapper>

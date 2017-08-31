@@ -33,10 +33,10 @@ public class MuliDatabaseTest {
         System.out.println("************************************************************");
 
         this.primaryRepository
-                .save(new PrimaryMongoObject(null, "第一个库的对象"));
+                .save(new PrimaryMongoObject());
 
         this.secondaryRepository
-                .save(new SecondaryMongoObject(null, "第二个库的对象"));
+                .save(new SecondaryMongoObject());
 
         List<PrimaryMongoObject> primaries = this.primaryRepository.findAll();
         for (PrimaryMongoObject primary : primaries) {

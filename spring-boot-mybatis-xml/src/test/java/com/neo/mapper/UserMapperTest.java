@@ -41,7 +41,7 @@ public class UserMapperTest {
 	
 	@Test
 	public void testUpdate() throws Exception {
-		UserEntity user = UserMapper.getOne(6l);
+		UserEntity user = UserMapper.getOne(1l);
 		System.out.println(user.toString());
 		user.setNickName("neo");
 		UserMapper.update(user);

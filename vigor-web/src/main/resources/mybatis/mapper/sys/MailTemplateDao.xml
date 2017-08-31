@@ -1,0 +1,78 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.vigor.modules.sys.dao.MailTemplateDao">
+
+	<sql id="mailTemplateColumns">
+		a.mt_id AS "mtId",
+		a.mt_type AS "mtType",
+		a.mt_content AS
+		"mtContent",
+		a.pitch_on AS "pitchOn"
+	</sql>
+
+
+	<select id="get" resultType="MailTemplate">
+		SELECT
+		<include refid="mailTemplateColumns" />
+		FROM e_mail_template a
+		WHERE a.id = #{id}
+	</select>
+
+	<select id="findList" resultType="MailTemplate">
+		SELECT
+		<include refid="mailTemplateColumns" />
+		FROM e_mail_template a
+		<where>
+
+			<if test="mtType != null and mtType != ''">
+				AND a.mt_type = #{mtType}
+			</if>
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+			</otherwise>
+		</choose>
+	</select>
+
+	<insert id="insert">
+		INSERT INTO e_mail_template(
+		mt_id,
+		mt_type,
+		mt_content,
+		pitch_on
+		) VALUES (
+		#{mtId},
+		#{mtType},
+		#{mtContent},
+		#{pitchOn}
+		)
+	</insert>
+
+	<update id="update">
+		UPDATE e_mail_template SET
+		mt_type = #{mtType},
+		mt_content = #{mtContent},
+		pitch_on = #{pitchOn}
+		WHERE mt_id = #{mtId}
+	</update>
+	
+	<update id="pitchOn">
+		UPDATE e_mail_template SET
+		pitch_on = 1
+		WHERE mt_id = #{mtId}
+	</update>
+	
+	<update id="unPitchOn">
+		UPDATE e_mail_template SET
+		pitch_on = 0
+		WHERE mt_type=#{mtType} and mt_id != #{mtId}
+	</update>
+
+	<update id="delete">
+		DELETE FROM e_mail_template
+		WHERE id = #{id}
+	</update>
+</mapper>
