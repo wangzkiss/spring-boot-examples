@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.vigor.modules.partner.dao.PartnerIpDao">
+    
+	<sql id="partnerIpColumns">
+		a.ip_start AS "ipStart", 
+		a.ip_end AS "ipEnd", 
+		a.partner_id AS "partnerId"
+	</sql>
+	
+	<sql id="partnerIpJoins">
+		LEFT JOIN e_partner b ON b.partner_id = a.partner_id
+	</sql>
+	
+    
+	<select id="get" resultType="PartnerIp" >
+		SELECT 
+			<include refid="partnerIpColumns"/>
+		FROM e_partner_service a
+		<include refid="partnerIpJoins"/>
+		WHERE a.id = #{id}
+	</select>
+	
+	<select id="findPartnerIpByPartnerId" resultType="PartnerIp" parameterType="int">
+		SELECT 
+			<include refid="partnerIpColumns" />
+		FROM e_partner_ip a 
+		<include refid="partnerIpJoins"/>
+		where a.partner_id = #{partnerId} 
+	</select>
+	
+	<select id="findList" resultType="PartnerServ" >
+		SELECT 
+			<include refid="partnerIpColumns"/>
+		FROM e_partner_ip a
+		<include refid="partnerIpJoins"/>
+		<where>
+			
+			<if test="partnerId != null and partnerId != ''">
+				AND a.partner_id = #{partnerId}
+			</if>
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="findAllList" resultType="PartnerServ" >
+		SELECT 
+			<include refid="partnerIpColumns"/>
+		FROM e_partner_ip a
+		<include refid="partnerIpJoins"/>
+		<where>
+			
+		</where>		
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+			</otherwise>
+		</choose>
+	</select>
+	
+	<insert id="insert">
+		INSERT INTO e_partner_ip(
+			partner_id, 
+			ip_start, 
+			ip_end 
+		) VALUES (
+			#{partnerId}, 
+			#{ipStart}, 
+			#{ipEnd}
+		)
+	</insert>
+	
+	<delete id="deletePartnerIpByPartnerId" parameterType="int">
+	delete from e_partner_ip where partner_id = #{partnerId}
+	</delete>
+	
+	<!--物理删除-->
+	<update id="delete">
+		DELETE FROM e_partner_ip
+		<choose>
+			<when test="id !=null and id != ''">
+				WHERE id = #{id}
+			</when>
+			<otherwise>
+				WHERE partner_id = #{partnerId}
+			</otherwise>
+		</choose>
+	</update>
+	
+	<!--逻辑删除-->
+	<update id="deleteByLogic">
+		UPDATE e_partner_ip SET 
+			del_flag = #{DEL_FLAG_DELETE}
+		<choose>
+			<when test="id !=null and id != ''">
+				WHERE id = #{id}
+			</when>
+			<otherwise>
+				WHERE partner_id = #{partnerId}
+			</otherwise>
+		</choose>
+	</update>
+	
+	
+	<!-- 根据实体名称和字段名称和字段值获取唯一记录 -->
+	<select id="findUniqueByProperty" resultType="PartnerIp" statementType="STATEMENT">
+		select * FROM e_partner_ip  where ${propertyName} = '${value}'
+	</select>
+	
+</mapper>

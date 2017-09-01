@@ -1,0 +1,106 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.vigor.modules.meta.dao.TaskHourReportDao">
+
+	<sql id="taskHourReportColumns">
+		a.id as "id",
+		a.task_type as "taskType",
+		a.fail_count as "failCount",
+		a.success_count as "successCount",
+		a.pause_count as "pauseCount",
+		a.running_count as "runningCount",
+		a.sdate as "sdate",
+		a.shour as "shour",
+		a.time_consuming as "timeConsuming"
+	</sql>
+
+	<select id="get" resultType="TaskHourReport" parameterType="java.lang.String">
+		select
+		<include refid="taskHourReportColumns"></include>
+		from e_task_hour_report a where a.id = #{id}
+	</select>
+
+	<select id="findList" resultType="TaskHourReport" parameterType="TaskHourReport">
+		SELECT DISTINCT
+			<include refid="taskHourReportColumns"/>
+		FROM e_task_hour_report a
+		<where>
+			<if test="taskType != null and taskType != 0">
+				and a.task_type = #{taskType}
+			</if> 
+			<if test="sdate != null and sdate != ''">
+				and a.sdate = #{sdate}
+			</if>
+			<if test="shour != null and shour != 0">
+				and a.shour = #{shour}
+			</if>
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+			ORDER BY a.id desc
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="statisticTask" parameterType="TaskHourReport" resultType="TaskHourReport">
+		select 
+		sum(a.fail_count) as "failCount",
+		sum(a.success_count) as "successCount",
+		sum(a.pause_count) as "pauseCount",
+		sum(a.running_count) as "runningCount",
+		a.shour,a.sdate
+		from e_task_hour_report a where 1 = 1
+		<if test="cBeginDate != null and cBeginDate != ''">
+			and a.sdate <![CDATA[>=]]> #{cBeginDate}
+		</if>
+		<if test="cEndDate != null and cEndDate != ''">
+			and a.sdate <![CDATA[<=]]> #{cEndDate}
+		</if>
+		group by a.sdate
+	</select>
+	
+	<select id="statistictaskByType" parameterType="TaskHourReport" resultType="TaskHourReport">
+		select a.task_type , sum(a.time_consuming) as "timeConsuming"
+		from e_task_hour_report a where 1 = 1
+		<if test="cBeginDate != null and cBeginDate != ''">
+			and a.sdate <![CDATA[>=]]> #{cBeginDate}
+		</if>
+		<if test="cEndDate != null and cEndDate != ''">
+			and a.sdate <![CDATA[<=]]> #{cEndDate}
+		</if>
+		group by a.task_type
+		ORDER BY cast(a.task_type as unsigned) asc
+	</select>
+	
+	<insert id="insert" useGeneratedKeys="true" keyColumn="id" keyProperty="id" parameterType="TaskHourReport">
+		INSERT INTO e_task_hour_report(
+			task_type,
+			fail_count,
+			success_count,
+			pause_count,
+			running_count,
+			sdate,
+			shour,
+			time_consuming
+		) VALUES (
+			#{taskType},
+			#{failCount},
+			#{successCount},
+			#{pauseCount},
+			#{runningCount},
+			#{sdate},
+			#{shour},
+			#{timeConsuming}
+		)
+	</insert>
+	
+	<!--物理删除-->
+	<update id="delete">
+		DELETE FROM e_task_hour_report
+		WHERE id = #{id}
+	</update>
+	
+</mapper>

@@ -8,7 +8,6 @@ import java.util.Collection;
 import java.util.List;
 
 import javax.annotation.PostConstruct;
-import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.shiro.authc.AuthenticationException;
@@ -23,10 +22,8 @@ import org.apache.shiro.realm.AuthorizingRealm;
 import org.apache.shiro.session.Session;
 import org.apache.shiro.subject.PrincipalCollection;
 import org.apache.shiro.util.ByteSource;
-import org.apache.shiro.web.util.WebUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import cn.vigor.common.config.Global;
@@ -55,8 +52,8 @@ public class SystemAuthorizingRealm extends AuthorizingRealm {
 	
 	private SystemService systemService;
 	
-	@Autowired
-	HttpServletRequest request;
+	/*@Autowired
+	HttpServletRequest request;*/
 
 	/**
 	 * 认证回调函数, 登录时调用
@@ -70,7 +67,7 @@ public class SystemAuthorizingRealm extends AuthorizingRealm {
 			logger.debug("login submit, active session size: {}, username: {}", activeSessionSize, token.getUsername());
 		}
 		
-		boolean mobile = WebUtils.isTrue(request, FormAuthenticationFilter.DEFAULT_MOBILE_PARAM);
+		boolean mobile = false;//WebUtils.isTrue(request, FormAuthenticationFilter.DEFAULT_MOBILE_PARAM);
 		// 校验登录验证码
 		if (!mobile && LoginController.isValidateCodeLogin(token.getUsername(), false, false)){
 			Session session = UserUtils.getSession();

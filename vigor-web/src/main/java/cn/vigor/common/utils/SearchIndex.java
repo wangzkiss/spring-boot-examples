@@ -25,6 +25,7 @@ import org.elasticsearch.transport.client.PreBuiltTransportClient;
 import cn.vigor.modules.tji.entity.JobLog;
 import net.sf.json.JSONArray;
 
+
 public class SearchIndex
 {
     public final static String CLUSTERNAME = "yhm-elk";

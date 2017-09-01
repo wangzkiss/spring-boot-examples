@@ -1,0 +1,277 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.vigor.modules.tji.dao.JobDao">
+    
+	<sql id="jobColumns">
+		a.job_id AS "jobId",
+		a.task_id AS "taskId",
+		a.task_type AS "taskType",
+		a.group_id AS "groupId",
+		a.job_name AS "jobName",
+		a.job_status AS "jobStatus",
+		a.exec_status AS "execStatus",
+		a.schedule_rule AS "scheduleRule",
+		a.pause_flag AS "pauseFlag",
+		a.notify_email AS "notifyEmail",
+		a.start_time AS "startTime",
+		a.end_time AS "endTime",
+		a.schedule_level AS "scheduleLevel",
+		a.again_flag AS "againFlag",
+		a.exec_type AS "execType",
+		a.create_time AS "createTime",
+		a.create_user AS "createUser"
+	</sql>
+	
+	<select id="get" resultType="Job" >
+		SELECT 
+			<include refid="jobColumns"/>
+		FROM e_job a
+		WHERE a.job_id = #{jobId}
+	</select>
+	
+	<select id="getJobByTaskId" resultType="Job" >
+		SELECT 
+			<include refid="jobColumns"/>
+		FROM e_job a
+		WHERE a.again_flag = 0 and a.task_id = #{taskId}
+	</select>
+	
+	<select id="getJobCountTaskId" resultType="int" >
+		SELECT 
+			count(1)
+		FROM e_job a
+		WHERE a.task_id = #{taskId}
+	</select>
+	
+	<select id="findList" resultType="Job" >
+		SELECT 
+			<include refid="jobColumns"/>,
+			b.group_name AS "groupName",
+			c.type_name AS "typeName"
+		FROM e_job a
+		LEFT JOIN e_task_group b
+		ON a.group_id=b.group_id
+		LEFT JOIN e_base_task_type c
+		ON a.task_type=c.type_id
+		<where>
+			<if test="cStartTime != null and cEndTime != null">
+				AND a.create_time BETWEEN #{cStartTime} AND #{cEndTime} 
+			</if>
+			<if test="cStartTime != null and cEndTime == null">
+				AND a.create_time > #{cStartTime} 
+			</if>
+			<if test="cStartTime == null and cEndTime != null">
+				<![CDATA[AND a.create_time  < #{cEndTime}]]>
+			</if>
+			<if test="isAdmin == 0">
+				AND a.create_user = #{currentUser.loginName}
+			</if>
+			<if test="jobStatus != null and jobStatus != -1">
+				AND a.job_status = #{jobStatus}
+			</if>
+			<if test="execStatus != null and execStatus != -1">
+				AND a.exec_status = #{execStatus}
+			</if>
+			<if test="taskType != null and taskType != -1">
+				AND a.task_type = #{taskType}
+			</if>
+			<if test="taskFlag == 1">
+				AND a.task_type in (1,2)
+			</if>
+			<if test="taskFlag == 2">
+				AND a.task_type in (3,4,5,6,7,8,9)
+			</if>
+			<if test="taskFlag == 3">
+				AND a.task_type in (10)
+			</if>
+			<if test="groupName != null and groupName != ''">
+				AND b.group_name like CONCAT("%",#{groupName},"%")
+			</if>
+			<if test="jobName != null and jobName != ''">
+				AND a.job_name like CONCAT("%",#{jobName},"%")
+			</if>
+			<if test="jobId != null and jobId != 0">
+				AND a.job_id=#{jobId}
+			</if>
+			<if test="jobIds != null and jobIds != ''">
+				AND a.job_id in (${jobIds}) 
+			</if>
+			<if test="vtype != null and vtype == 'vdi'">
+				AND a.task_type in (1,2,13)
+			</if>
+			<if test="vtype != null and vtype == 'vdp'">
+				AND a.task_type in (3,4,5,6,7,8,9,10,12)
+			</if>
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="getJobDetailById" resultType="JobDetail" parameterType="int">
+		 SELECT 
+			a.job_id AS "jobId",
+			a.job_name AS "jobName",
+			a.notify_email AS "notifyEmail",
+			a.pause_flag AS "pauseFlag",
+			a.schedule_level AS "scheduleLevel",
+			a.schedule_rule AS "scheduleRule",
+			a.pause_flag AS "pauseFlag",
+			a.job_status AS "jobStatus",
+			a.exec_status AS "execStatus",
+			a.exec_type AS "execType",
+			a.create_time AS "createTime",
+		    a.create_user AS "createUser",
+		    a.start_time AS "startTime",
+		    a.again_flag AS "againFlag",
+			b.task_id AS "taskId",
+			b.task_name AS "taskName",
+			b.task_desc AS "taskDesc",
+			b.task_type AS "taskType",
+			b.come_from AS "comeFrom",
+			b.xml_data AS "xmlData",
+			b.third_task_id AS "thirdTaskId",
+			c.group_name AS "groupName",
+			d.type_name AS "typeName",
+			e.platform_id AS "platformId",
+			f.platform_url AS "platformUrl"
+		FROM (select * from e_job where job_id=#{jobId}) a
+		LEFT JOIN e_task b
+		ON a.task_id=b.task_id
+		LEFT JOIN e_task_group c
+		ON b.group_id=c.group_id 
+		LEFT JOIN e_base_task_type d
+		ON b.task_type=d.type_id
+		LEFT JOIN e_task_platform_relation e
+	    ON a.task_type = e.task_type_id
+	    LEFT JOIN e_platform f
+	    ON e.platform_id=f.id
+	</select>
+	
+	<select id="getSchCluster" resultType="map">
+		select node_ip as nodeIp,node_port as nodePort
+		from e_platform_node
+		where platform_id = (select id from e_platform where platform_name = 'scheduler_cluster')
+	</select>
+	
+	<select id="getPlatformNodeList" resultType="map">
+		SELECT
+			node_ip AS "nodeIp",
+			node_type AS "nodeType",
+			node_port AS "nodePort",
+			node_user AS "nodeUser",
+			node_password AS "nodePassword",
+			node_dir AS "nodeDir"
+		FROM e_platform_node
+		WHERE platform_id = #{platformId}
+		order by node_type
+	</select>
+	
+	<select id="getJobsByGroupId" resultType="int">
+		select job_id from e_job where job_status=1 and again_flag=0 and group_id=#{groupId}
+	</select>
+	
+	<select id="getUserForEmail" resultType="map" >
+		select login_name as loginName,email as eMail
+		from sys_user
+		where email is not null and email != ''
+	</select>
+	
+	<insert id="insert">
+		INSERT INTO e_job(
+			task_id,
+			task_type,
+			group_id,
+			job_name,
+			job_status,
+			schedule_rule,
+			pause_flag,
+			notify_email,
+			start_time,
+			end_time,
+			schedule_level,
+			exec_type,
+			create_time,
+			create_user,
+			again_flag
+		) VALUES (
+			#{taskId},
+			#{taskType},
+			#{groupId},
+			#{jobName},
+			#{jobStatus},
+			#{scheduleRule},
+			#{pauseFlag},
+			#{notifyEmail},
+			#{startTime},
+			#{endTime},
+			#{scheduleLevel},
+			#{execType},
+			now(),
+			#{createUser},
+			#{againFlag}
+		)
+		<selectKey order="AFTER" resultType="int" keyProperty="jobId">
+			select LAST_INSERT_ID() as jobId 
+		</selectKey>
+	</insert>
+	
+	<update id="update">
+		UPDATE e_job SET 
+		    group_id=#{groupId},
+			job_name = #{jobName},
+			schedule_rule = #{scheduleRule},
+			pause_flag = #{pauseFlag},
+			notify_email = #{notifyEmail},
+			start_time = #{startTime},
+			end_time = #{endTime},
+			schedule_level = #{scheduleLevel},
+			exec_type = #{execType}
+		WHERE job_id = #{jobId}
+	</update>
+	
+	<update id="updateStatus">
+		UPDATE e_job SET
+			<if test="flag == 1">
+				job_status=#{status}
+			</if>
+			<if test="flag == 2">
+				exec_status=#{status}
+			</if> 
+		WHERE job_id = #{jobId}
+	</update>
+	
+	<!--物理删除-->
+	<update id="delete">
+		DELETE FROM e_job
+		WHERE job_id = #{jobId}
+	</update>
+	
+	<update id="deleteJobSch">
+		DELETE FROM e_job_schedule
+		WHERE job_id = #{jobId}
+	</update>
+	
+	<update id="deleteInstance">
+		DELETE FROM e_job_instance
+		WHERE job_id = #{jobId}
+	</update>
+	
+	<!--逻辑删除-->
+	<update id="deleteByLogic">
+		UPDATE e_job SET 
+			del_flag = #{DEL_FLAG_DELETE}
+		WHERE id = #{id}
+	</update>
+	
+	
+	<!-- 根据实体名称和字段名称和字段值获取唯一记录 -->
+	<select id="findUniqueByProperty" resultType="Job" statementType="STATEMENT">
+		select * FROM e_job  where ${propertyName} = '${value}'
+	</select>
+	
+</mapper>

@@ -1,0 +1,180 @@
+
+[v-cloak]{
+	display: none;
+}
+body{
+	z-index: 1;
+}
+.version-content{
+	overflow: hidden;
+	width: 100%;
+}
+.version-content ul{
+	list-style: none;
+	overflow: hidden;
+	height: 90px;
+	width: 100%;
+}
+.version-content ul li{
+	float: left;
+	border: 1px solid #dddfe2;
+	border-radius: 4px; 
+	padding: 4px;
+	margin-left: 10px;
+	margin-top: 10px;
+	width: 130px;
+}
+.version-content ul li:first-child{
+	border: none;
+	padding: 12px;
+	background: rgba(51, 153, 255, 0.16);
+}
+.version-content ul li .leftS{
+	background: url(../common/img/left.png) no-repeat;
+	height: 50px;
+	width: 50px;
+	float: left;
+}
+.version-content ul li .rightS{
+	background: url(../common/img/right.png) no-repeat;
+	height: 50px;
+	width: 50px;
+	float: right;
+}
+.version-content ul li .leftS:hover{
+	background: url(../common/img/leftHover.png) no-repeat;
+}
+.version-content ul li .rightS:hover{
+	background: url(../common/img/rightHover.png) no-repeat;
+}
+.version-content ul li:hover{
+	cursor: pointer;
+	/*background: rgba(51, 153, 255, 0.16);*/
+	box-shadow: 0 1px 6px rgba(0,0,0,.2);
+	border-color: #eee;
+}
+.version{
+	background: rgba(2, 116, 193, 0.66);
+	border-radius: 3px;
+	color: #FFF;
+	padding: 1px 6px;
+}
+.createtime{
+	margin-top: 23px;
+	text-align: center;
+}
+.isCurrent{
+	position: relative;
+    bottom: -15;
+    margin: auto;
+    width: 16px;
+    height: 16px;
+}
+.checkPng{
+    background: url(../common/img/check_size.png) no-repeat;
+}
+.checkBack{
+	background: rgba(51, 153, 255, 0.16);
+}
+.disabled{
+	cursor: not-allowed;
+}
+.padding-25{
+	padding: 5px 25px;
+}
+.saveAction{
+	background: #657180;
+	padding: 4px;
+	border-radius: 4px;
+	overflow: hidden;
+	color: #FFF;
+	height: 38px;
+}
+.btnHover:hover{
+	box-shadow: 0 1px 6px rgba(0,0,0,.2);
+}
+.fixedTop{
+	position: fixed;
+	top: 60px;
+	width: 96.3%;
+	z-index: 999999;
+}
+.borderTop{
+	border-top: 1px solid #ccc;
+}
+.goTop{
+	display: none; 
+	position: fixed;
+	bottom: 30;
+	right: 40;
+}
+.goTop img{
+	width: 40px;
+	height: 40px;
+}
+.goTop:hover{
+	cursor: pointer;
+}
+.pngMargin{
+	margin: 4px;
+	background: #FFF;
+	border-radius: 6px;
+	color: #777;
+}
+.textMaring{
+	margin: 4px;
+}
+.textMaring .next{
+	text-decoration: underline;
+	color: #FFF;
+}
+.textMaring .next:hover{
+	color: #ed5565;
+	cursor: pointer;
+}
+.point:hover{
+	cursor: pointer;
+}
+.searchTirgger{
+	display: block;
+}
+.importantColor{
+	color: green !important;
+}
+.ScreeningValue{
+	color: red;
+	background: #91E0E7;
+}
+#contentTable tbody td{
+    border-radius: 3px;
+    padding: 5px 7px;
+    width: 120px;
+    font-size: 14px;
+    background-color: #FFF;
+    cursor: pointer;
+    text-transform:capitalize;
+  }
+  #contentTable td.tactive {
+    background: rgba(0, 101, 189, 0.65);
+    /*border-radius: 3px;*/
+    border: none;
+    box-shadow: 0 1px 6px rgba(0,0,0,.4);
+  }
+  #contentTable td.tactive a {
+    color: #fff;
+  }
+  .hoverColor:hover{
+    /*text-decoration: underline;*/
+    box-shadow: 0 1px 6px rgba(0,0,0,.4);
+    border: none;
+  }
+.formTitle{
+	padding: 20px 24px 5px 15px;
+}
+.ibox-content .Warning {
+	padding: 10px;
+    background: #FCF8E3;
+    margin: 10px 18px;
+    border-radius: 8px;
+    color: #c09853;
+}

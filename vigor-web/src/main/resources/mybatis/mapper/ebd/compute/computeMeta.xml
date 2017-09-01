@@ -1,0 +1,421 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.vigor.modules.compute.dao.ComputeMetaDao">
+
+	<resultMap type="cn.vigor.modules.compute.bean.Repositories" id="repoMap">
+		<id property="id" column="id" />
+		<result property="connName" column="conn_name" />
+		<result property="ip" column="ip" />
+		<result property="repoType" column="repo_type" />
+		<result property="userName" column="user_name" />
+		<result property="userPwd" column="user_pwd" />
+		<result property="port" column="port" />
+		<result property="metaType" column="meta_type" />
+		<result property="repoName" column="repo_name" />
+		<result property="repoDesc" column="repo_desc" />
+		<result property="updateTime" column="update_time" />
+		<result property="createTime" column="create_time" />
+		<result property="createUser" column="create_user" />
+		<result property="delFlag"   column="del_flag" />
+	</resultMap>
+	
+	
+	
+	
+	
+	<select id="getAllRepo" resultMap="repoMap" parameterType="inParam">
+		SELECT emr.id, emr.conn_name,emr.ip,emr.repo_type,emr.user_name,
+		emr.user_pwd,emr.port,emr.meta_type,emr.repo_name,emr.repo_desc,
+		emr.update_time,emr.create_time,emr.create_user,emr.del_flag,emr.del_flag
+		FROM e_meta_repo emr  
+		<if test="isAdmin ==false">
+			JOIN e_data_permission tp ON tp.data_id=emr.id AND tp.data_type='repo' and tp.query='Y' and tp.user_id=#{userid}
+			and emr.repo_type in
+			<foreach item="item" index="index" collection="repoArray" open="(" separator="," close=")">
+				#{item}
+			</foreach>
+		</if>
+		
+		<if test="isAdmin ==true">
+			where emr.repo_type in
+			<foreach item="item" index="index" collection="repoArray" open="(" separator="," close=")">
+				#{item}
+			</foreach>
+		</if>
+		
+		and emr.meta_type in 
+		<foreach item="item" index="index" collection="repoMetaTypeArray" open="(" separator="," close=")">
+				#{item}
+		</foreach>
+	</select>
+	
+	
+	<resultMap type="cn.vigor.modules.compute.bean.TmpTable" id="tmpMap">
+		<id property="id" column="id" />
+		<result property="tbname" column="tbname" />
+		<result property="dbname" column="dbname" />
+		<result property="userid" column="userid" />
+		<result property="taskId" column="task_id" />
+		
+	</resultMap>
+	
+	<select id="getSameTable" resultType="int" parameterType="inParam">
+	
+		select count(*) from e_tmp_table ett where ett.dbname=#{dbname}  and ett.tbname=#{tbname}
+	
+	</select>
+	
+	<select id="getSameTableAndUserid" resultType="int" parameterType="inParam">
+	
+		select count(*) from e_tmp_table ett where ett.dbname=#{dbname} and ett.userid =#{userid} and ett.tbname=#{tbname}
+	
+	</select>
+	
+	
+	<select id="getAllTableName" resultMap="tmpMap" parameterType="inParam">
+	
+		select * from e_tmp_table ett where ett.dbname=#{dbname} 
+		<if test="isAdmin ==false">
+			and ett.userid =#{userid} 
+		</if>
+	
+	</select>
+	
+	
+	<select id="getTaskId" resultType="integer">
+		SELECT
+		task_id FROM e_tmp_table ett where ett.dbname=#{dbname} AND ett.tbname =#{tbname}
+		<if test="isAdmin ==false">
+			and ett.userid =#{userId} 
+		</if>
+	</select>
+	
+	
+	<insert id="insertTmpTable" parameterType="inParam"
+		useGeneratedKeys="true" keyProperty="id" keyColumn="id">
+		INSERT INTO
+		e_tmp_table
+		(
+		tbname,
+		dbname,
+		userid,
+		task_id
+		)
+		VALUE (
+		#{tbname},
+		#{dbname},
+		#{userid},
+		#{taskId}
+		)
+	</insert>
+	
+	
+	<delete id="deleteTabelName" parameterType="inParam">
+		delete from
+		e_tmp_table where tbname=#{tbname} and dbname=#{dbname} and userid=#{userid}
+	</delete>
+	
+	
+	<resultMap type="cn.vigor.modules.compute.bean.ComputeMetaStore" id="metaStoreMap">
+		<id property="storeId" column="storeid" />
+		<result property="repoId" column="repo_id" />
+		<result property="storeName" column="store_name" />
+		<result property="storeType" column="store_type" />
+		<result property="delimiter" column="delimiter" />
+		<result property="storeDesc" column="store_desc" />
+		<result property="storeFile" column="store_file" />
+		<result property="stroeStatus" column="stroe_status" />
+		<result property="hdfsInfo" column="hdfs_info" />
+		<result property="hdfsDir" column="hdfs_dir" />
+		<result property="storeExternal" column="store_external" />
+		<result property="createTime" column="create_time" />
+		<result property="createUser" column="create_user" />
+		<result property="updateTime" column="update_time" />
+		<result property="delFlag"   column="del_flag" />
+		<result property="storeTypeName"   column="type_name" />
+		<result property="loginUserId"   column="logUserId" />
+		<collection property="metaStoreFields" ofType="MetaStoreField">
+			<id property="storeFieldId" column="storeFieldId" />
+			<result property="storeId" column="store_id" />
+			<result property="proName" column="pro_name" />
+			<result property="proIndex" column="pro_index" />
+			<result property="dataFormat" column="data_format" />
+			<result property="proType" column="pro_type" />
+			<result property="proDesc" column="pro_desc" />
+			<result property="createBy" column="create_by" />
+			<result property="createDate" column="create_date" />
+			<result property="updateBy" column="update_by" />
+			<result property="updateDate" column="update_date" />
+			<result property="delFlag" column="del_flag" />
+		</collection>
+	</resultMap>
+	
+	<select id="getMetaStores" resultMap="metaStoreMap" parameterType="inParam">
+		select ems.id as storeid,ems.store_name,ems.create_user,ems.store_desc,ems.store_file,ems.repo_id,
+		ems.store_type,esp.id,esp.pro_index,esp.pro_name,esp.pro_type,su.id as logUserId,
+		esp.pro_desc,st.type_name,esp.create_by,esp.del_flag
+		from e_meta_store ems left join e_meta_store_pro esp on
+		esp.store_id = ems.id 
+		left join e_base_store_type st on 
+		st.type_id=ems.store_type 
+		left join sys_user su on ems.create_user=su.login_name 
+		<if test="isAdmin ==false">
+			JOIN e_data_permission tp ON tp.data_id=ems.id AND tp.data_type='store' and tp.query='Y' and tp.user_id=#{userid} and su.id=tp.user_id
+		</if>
+		where  
+		 ems.store_type in
+		<foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+		or esp.pro_index > 0 
+		order by ems.id desc,esp.pro_index asc
+	</select>
+	
+		<select id="getMetaStoresByTypesForKettle" resultMap="metaStoreMap" parameterType="inParam">
+		select ems.id as storeid,ems.store_name,ems.store_desc,ems.create_user,ems.store_file,ems.hdfs_info,ems.delimiter,ems.repo_id,
+		ems.store_type,esp.id as storeFieldId,esp.store_id,esp.pro_index,esp.pro_name,esp.pro_type,su.id as logUserId,
+		esp.pro_desc,st.type_name 
+		from e_meta_store ems left join e_meta_store_pro esp on 
+		esp.store_id = ems.id left join e_base_store_type st on 
+		st.type_id=ems.store_type left join sys_user su on ems.create_user=su.login_name 
+		<if test="isAdmin ==false">
+			JOIN e_data_permission tp ON tp.data_id=ems.id AND tp.data_type='store' and tp.query='Y' and tp.user_id=#{userid} <!-- and su.id=tp.user_id -->
+		</if>
+		where (esp.type > 1 or esp.type is null) 
+		and ems.repo_id=#{repoId} 
+		and ems.store_type in
+		<foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+		order by ems.create_time desc,esp.pro_index asc
+	</select>
+
+	<select id="getMetaStoresByTypes" resultMap="metaStoreMap" parameterType="inParam">
+		select ems.id as storeid,ems.store_name,ems.store_desc,ems.create_user,ems.store_file,ems.hdfs_info,ems.delimiter,ems.repo_id,
+		ems.store_type,esp.id as storeFieldId,esp.store_id,esp.pro_index,esp.pro_name,esp.pro_type,su.id as logUserId,
+		esp.pro_desc,st.type_name
+		from e_meta_store ems join e_meta_store_pro esp on
+		esp.store_id = ems.id
+		join e_base_store_type st on
+		st.type_id=ems.store_type 
+		join sys_user su on ems.create_user=su.login_name 
+		<if test="isAdmin ==false">
+			JOIN e_data_permission tp ON tp.data_id=ems.id AND tp.data_type='store' and tp.query='Y' and tp.user_id=#{userid} <!-- and su.id=tp.user_id -->
+		</if>
+		where esp.pro_index > 0 
+		and ems.repo_id=#{repoId} 
+		and ems.store_type in
+		<foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+		order by ems.create_time desc,esp.pro_index asc
+	</select>
+	
+	<select id="getModelMetaStoresByTypes" resultMap="metaStoreMap" parameterType="inParam">
+		select ems.id as storeid,ems.store_name,ems.store_desc,ems.create_user,ems.store_file,
+		ems.hdfs_info,ems.delimiter,ems.repo_id,su.id as logUserId,
+		ems.store_type from e_meta_store ems 
+		join sys_user su on ems.create_user=su.login_name 
+		<if test="isAdmin ==false">
+			JOIN e_data_permission tp ON tp.data_id=ems.id AND tp.data_type='store' and tp.query='Y' and tp.user_id=#{userid} and su.id=tp.user_id
+		</if>
+		where 
+		ems.store_name like '%${%' 
+		and ems.store_type in
+		<foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+		<if test="repoId !=0">
+			and ems.repo_id=#{repoId} 
+		</if>
+	</select>
+	
+	<select id="getModelMetaSourceByTypes" resultMap="metaSourceMap" parameterType="inParam">
+		select ems.id as sourceId,ems.source_name,ems.source_desc,ems.create_user,ems.source_file,ems.delimiter,
+		ems.repo_id,su.id as logUserId,ems.source_type from e_meta_source ems 
+		join sys_user su on ems.create_user=su.login_name 
+		<if test="isAdmin ==false">
+			JOIN e_data_permission tp ON tp.data_id=ems.id AND tp.data_type='source' and tp.query='Y' and tp.user_id=#{userid} and su.id=tp.user_id
+		</if>
+		where 
+		ems.source_name like '%${%' 
+		and ems.source_type in 
+		<foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+		<if test="repoId !=0">
+			and ems.repo_id=#{repoId} 
+		</if>
+	</select>
+	
+	<resultMap type="cn.vigor.modules.compute.bean.ComputeMetaSource" id="metaSourceMap">
+		<id property="id" column="sourceId" />
+		<result property="repoId" column="repo_id" />
+		<result property="sourceName" column="source_name" />
+		<result property="sourceType" column="source_type" />
+		<result property="delimiter" column="delimiter" />
+		<result property="sourceDesc" column="source_desc" />
+		<result property="sourceFile" column="source_file" />
+		<result property="createTime" column="create_time" />
+		<result property="createUser" column="create_user" />
+		<result property="updateTime" column="update_time" />
+		<result property="delFlag"   column="del_flag" />
+		<result property="loginUserId"   column="logUserId" />
+		<collection property="metaSourceField" ofType="MetaSourceField">
+			<id property="id" column="id" />
+			<result property="sourceId" column="source_id" />
+			<result property="proName" column="pro_name" />
+			<result property="proIndex" column="pro_index" />
+			<result property="dataFormat" column="data_format" />
+			<result property="proType" column="pro_type" />
+			<result property="proDesc" column="pro_desc" />
+			<result property="createBy" column="create_by" />
+			<result property="createDate" column="create_date" />
+			<result property="updateBy" column="update_by" />
+			<result property="updateDate" column="update_date" />
+			<result property="delFlag" column="del_flag" />
+		</collection>
+	</resultMap>
+	
+	<select id="getMetaSources" resultMap="metaSourceMap" parameterType="inParam">
+		select ems.id as sourceId,ems.source_name,ems.repo_id,ems.create_user,ems.source_desc,ems.source_file, ems.delimiter,
+		ems.source_type,esp.id,esp.pro_index,esp.pro_name,su.id as logUserId,
+		esp.pro_type, esp.pro_desc,st.type_name,esp.create_by,esp.del_flag from e_meta_source ems left outer 
+		join e_meta_source_pro esp on esp.source_id = ems.id 
+		join e_base_source_type st on st.type_id=ems.source_type 
+		join sys_user su on ems.create_user=su.login_name 
+		<if test="isAdmin ==false">
+			JOIN e_data_permission tp ON tp.data_id=ems.id AND tp.data_type='source' and tp.query='Y' and tp.user_id=#{userid} and su.id=tp.user_id
+		</if>
+		where esp.pro_index > 0 and ems.source_type in 
+		<foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+		order by ems.id desc,esp.pro_index asc 
+	</select>
+	
+	<select id="getMetaSourcesByTypes" resultMap="metaSourceMap" parameterType="inParam">
+		select ems.id as sourceId,ems.source_name,ems.repo_id,ems.source_desc,ems.source_file, ems.create_user,
+		ems.source_type,esp.id,esp.pro_index,esp.pro_name,ems.delimiter,su.id as logUserId,
+		esp.pro_type, esp.pro_desc,st.type_name,esp.create_by,esp.del_flag from e_meta_source ems left outer 
+		join e_meta_source_pro esp on esp.source_id = ems.id 
+		join e_base_source_type st on st.type_id=ems.source_type 
+		join sys_user su on ems.create_user=su.login_name 
+		<if test="isAdmin ==false">
+			JOIN e_data_permission tp ON tp.data_id=ems.id AND tp.data_type='source' and tp.query='Y' and tp.user_id=#{userid} and su.id=tp.user_id
+		</if>
+		where esp.pro_index > 0 
+		and ems.repo_id=#{repoId} 
+		and ems.source_type in 
+		<foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+		order by ems.id desc,esp.pro_index asc 
+	</select>
+	
+	<resultMap type="cn.vigor.modules.compute.bean.ComputeMetaResult" id="metaResultMap">
+		<id property="resultId" column="resultId" />
+		<result property="repoId" column="repo_id" />
+		<result property="resultName" column="result_name" />
+		<result property="resultType" column="result_type" />
+		<result property="delimiter" column="delimiter" />
+		<result property="resultDesc" column="result_desc" />
+		<result property="resultFile" column="result_file" />
+		<result property="createTime" column="create_time" />
+		<result property="createUser" column="create_user" />
+		<result property="updateTime" column="update_time" />
+		<result property="delFlag"   column="del_flag" />
+		<collection property="metaResultFields" ofType="MetaResultField">
+			<id property="resultFieldId" column="resultFieldId" />
+			<result property="storeId" column="store_id" />
+			<result property="proName" column="pro_name" />
+			<result property="proIndex" column="pro_index" />
+			<result property="dataFormat" column="data_format" />
+			<result property="proType" column="pro_type" />
+			<result property="proDesc" column="pro_desc" />
+			<result property="createBy" column="create_by" />
+			<result property="createDate" column="create_date" />
+			<result property="updateBy" column="update_by" />
+			<result property="updateDate" column="update_date" />
+			<result property="delFlag" column="del_flag" />
+		</collection>
+	</resultMap>
+	
+	<select id="getMetaResultByTypes" resultMap="metaResultMap" parameterType="inParam">
+		select emr.id as resultId,emr.result_name,emr.result_desc,emr.result_file,
+		emr.result_type,esp.id as resultFieldId,esp.result_id,esp.pro_index,esp.pro_name,esp.pro_type,
+		esp.pro_desc,st.type_name
+		from e_meta_result emr join e_meta_result_pro esp on
+		esp.result_id = emr.id
+		join e_base_result_type st on
+		st.type_id=emr.result_type
+		
+		<if test="isAdmin ==false">
+	   		JOIN e_data_permission tp ON tp.data_id=emr.id AND tp.data_type='result' and tp.query='Y' and tp.user_id=#{userid}
+		</if>
+		
+		where esp.pro_index > 0 
+		and emr.repo_id=#{repoId} 
+		and emr.result_type in
+		<foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+		order by emr.create_time desc
+	</select>
+	
+	<select id="getMetaResults" resultMap="metaResultMap" parameterType="inParam">
+		select emr.id as resultId,emr.result_name,emr.result_desc,emr.result_file,
+		emr.result_type,esp.id as resultFieldId,esp.result_id,esp.pro_index,esp.pro_name,esp.pro_type,
+		esp.pro_desc,st.type_name
+		from e_meta_result emr join e_meta_result_pro esp on
+		esp.result_id = emr.id
+		join e_base_result_type st on
+		st.type_id=emr.result_type
+		<if test="isAdmin ==false">
+			JOIN e_data_permission tp ON tp.data_id=emr.id AND tp.data_type='result' and tp.query='Y' and  tp.user_id=#{userid} 
+		</if>
+		where esp.pro_index > 0 
+		and emr.result_type in
+		<foreach item="item" index="index" collection="array" open="(" separator="," close=")">
+			#{item}
+		</foreach>
+		order by emr.create_time desc
+	</select>
+	
+	<select id="isAdmin" parameterType="int" resultType="int">
+		select count(sys_role.enname) from sys_user join sys_user_role on sys_user.id=sys_user_role.user_id 
+		join sys_role on sys_role.id=sys_user_role.role_id where  sys_user.id=#{userId} 
+		AND sys_role.enname='system' 
+	</select>
+	
+	<resultMap type="cn.vigor.modules.compute.bean.RDataBaseMeta"  id="rDataBaseMap">
+		<id property="id" column="ID_DATABASE" />
+		<result property="name" column="NAME" />
+		<result property="idDatabaseContype" column="ID_DATABASE_TYPE" />
+		<result property="hostName" column="HOST_NAME" />
+		<result property="idDatabaseType" column="ID_DATABASE_TYPE" />
+		<result property="passoword" column="PASSWORD" />
+		<result property="port" column="port" />
+		<result property="databaseName" column="DATABASE_NAME" />
+		<result property="userName" column="USERNAME" />
+		<result property="repoDesc" column="repo_desc" />
+		<result property="serverName" column="SERVERNAME" />
+		<result property="dataTbs" column="DATA_TBS" />
+		<result property="indexTbs" column="INDEX_TBS" />
+		<result property="repoId"   column="REPO_ID" />
+		<result property="storeId"   column="STORE_ID" />
+		<result property="sourceId"   column="SOURCE_ID" />
+		<result property="loginUserId"   column="LOGIN_USER_ID" />
+		<result property="code"   column="CODE" />
+	</resultMap>
+	
+	<select id="getAllRDataBases" resultMap="rDataBaseMap" parameterType="inParam">
+	select rd.ID_DATABASE, rd.NAME, rd.HOST_NAME,rd.ID_DATABASE_CONTYPE,rd.DATABASE_NAME,rd.ID_DATABASE_TYPE,
+		rd.PORT,rd.USERNAME,rd.PASSWORD,rd.SERVERNAME,rd.DATA_TBS,rd.INDEX_TBS,rd.REPO_ID,rd.LOGIN_USER_ID,
+		rd.STORE_ID,rd.SOURCE_ID,rdt.CODE from r_database rd join r_database_type rdt on rd.ID_DATABASE_TYPE=rdt.ID_DATABASE_TYPE 
+		<if test="isAdmin ==false">
+			where rd.LOGIN_USER_ID=#{userid} 
+		</if>
+	</select>
+	
+</mapper>

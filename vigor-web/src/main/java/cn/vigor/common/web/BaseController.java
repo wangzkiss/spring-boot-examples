@@ -11,7 +11,7 @@ import java.util.List;
 import javax.servlet.http.HttpServletResponse;
 import javax.validation.ConstraintViolationException;
 import javax.validation.ValidationException;
-import javax.validation.Validator;
+//import javax.validation.Validator;
 
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.shiro.authc.AuthenticationException;
@@ -63,8 +63,8 @@ public abstract class BaseController {
 	/**
 	 * 验证Bean实例对象
 	 */
-	@Autowired
-	protected Validator validator;
+	/*@Autowired
+	protected Validator validator;*/
 
 	/**
 	 * 服务端参数有效性验证
@@ -74,7 +74,7 @@ public abstract class BaseController {
 	 */
 	protected boolean beanValidator(Model model, Object object, Class<?>... groups) {
 		try{
-			BeanValidators.validateWithException(validator, object, groups);
+			//BeanValidators.validateWithException(validator, object, groups);
 		}catch(ConstraintViolationException ex){
 			List<String> list = BeanValidators.extractPropertyAndMessageAsList(ex, ": ");
 			list.add(0, "数据验证失败：");
@@ -92,7 +92,7 @@ public abstract class BaseController {
 	 */
 	protected boolean beanValidator(RedirectAttributes redirectAttributes, Object object, Class<?>... groups) {
 		try{
-			BeanValidators.validateWithException(validator, object, groups);
+			//BeanValidators.validateWithException(validator, object, groups);
 		}catch(ConstraintViolationException ex){
 			List<String> list = BeanValidators.extractPropertyAndMessageAsList(ex, ": ");
 			list.add(0, "数据验证失败：");
@@ -109,7 +109,7 @@ public abstract class BaseController {
 	 * @return 验证成功：继续执行；验证失败：抛出异常跳转400页面。
 	 */
 	protected void beanValidator(Object object, Class<?>... groups) {
-		BeanValidators.validateWithException(validator, object, groups);
+		//BeanValidators.validateWithException(validator, object, groups);
 	}
 	
 	/**

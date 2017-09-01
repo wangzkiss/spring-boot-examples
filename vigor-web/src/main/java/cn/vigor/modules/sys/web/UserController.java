@@ -241,7 +241,7 @@ public class UserController extends BaseController {
 				try{
 					if ("true".equals(checkLoginName("", user.getLoginName()))){
 						user.setPassword(SystemService.entryptPassword("123456"));
-						BeanValidators.validateWithException(validator, user);
+						//BeanValidators.validateWithException(validator, user);
 						systemService.saveUser(user);
 						successNum++;
 					}else{

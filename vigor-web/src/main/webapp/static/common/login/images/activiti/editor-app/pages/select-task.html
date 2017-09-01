@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>选择任务</title>
+  
+  <!-- UI库CSS -->
+  <link rel="stylesheet" href="ui/css/ui.css">
+  <style>
+    *{
+      font-family: "微软雅黑"
+    }
+    #tb2{
+      font-size: 14px;
+    }
+    .filter{
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+    .filter-input select,
+    .filter-input input{
+      width: 130px;
+      border: 1px solid #CCC;
+      border-radius: 5px;
+      padding: 3px;
+    }
+    .filter-button button{
+      margin-left: 10px;
+      padding: 4px 10px;
+      border: none;
+      border-radius: 5px;
+      background: #36A7C4;
+      border-color: #36A7C4;
+      color: #fff;
+      -webkit-transition: all .5s;
+    }
+    #tb2 tr{
+      border: 1px solid #CCC !important; 
+    }
+    #tb2 td {
+      padding: 5px !important;
+    }
+  </style>
+</head>
+<body> 
+
+<!--   <button style="position: fixed; right: 0px; top: 0px;" onclick="location.reload()">刷新</button> -->
+
+  <div class="filter">
+    <span class="filter-label">任务类型：</span>
+    <span class="filter-input">
+      <select id="taskType" ></select>
+    </span>
+    <span class="filter-label">&emsp;任务名称：</span>
+    <span class="filter-input">
+      <input type="text" id="taskName" >
+    </span>
+    <span class="filter-button">
+      <button type="button" id="doQuery">查询</button>
+    </span>
+  </div>
+
+  <table id="tb2" width="100%"></table>
+
+  <!-- UI库加载器和配置文件 -->
+  <script src="ui/lib/require/require.js"></script>
+  <script src="ui/config.js" id="config"></script>
+  
+  <!-- 页面脚本 -->
+  <script>
+    // 引入jquery和Where选择器
+    require(['jquery', 'ui.grid', 'ui.select'], function($, Grid, Select){
+
+      // var root = $('#config').get(0).src.split('editor-app/pages/ui/config.js')[0];
+      var root = $('#config').get(0).src.split('activiti/editor-app/pages/ui/config.js')[0];
+      var taskName = getTaskName();
+
+      var select = new Select('#taskType', {
+        data: [         
+          {t:'不限', v:'0'}, 
+          {t:'ETL自定义任务', v:'1'},
+          {t:'ETL模板任务', v:'2'},
+          {t:'Hive任务', v:'3'},
+          {t:'Spark配置任务', v:'4'},
+          {t:'Spark自定义任务', v:'5'},
+          {t:'MR自定义任务', v:'6'},
+          {t:'数据质量任务', v:'7'},
+          {t:'存储过程任务', v:'8'},
+          {t:'X-OLTP任务', v:'10'},
+          {t:'SHELL任务', v:'11'},
+          {t:'X-OLAP任务', v:'12'}
+        ],
+        valueField: 'v', 
+        textField: 't'
+      });
+
+      var userName = (document.cookie.match(/userName=\w+/) || ['='])[0].
+        split('=')[1];
+
+      //
+      var grid = new Grid('#tb2', {
+
+        url: root + 'a/tji/task/task-for-act',
+
+        data: function(json){
+          var newData = [];
+
+          // console.log(json)
+          var data = json.data || [];
+          $.each(data, function(i, n){
+            newData.push({
+              name: n
+            });
+          });
+          // console.log(newData)
+          return newData;
+        },
+
+        autoLoad: false,
+
+        params: {
+          page: 1,
+          pageSize: 10,
+          userName: userName
+        },
+
+        pagination: true,
+
+        // 列信息
+        // key是必填的
+        columns: [
+          { key: 'name', label: '任务' },
+          { key: 'select', label: '选择', width: 100, formatter: function(o){
+            var ifChecked = o.name === taskName ? 'checked' : '';
+            var tag = '<input type="radio" name="xxx" onclick="setTaskName(\'' + o.name + '\')" ' + ifChecked + '>';
+            return tag;
+          } }
+        ]
+      });
+
+      function refreshGrid(){
+        grid.refresh({
+          jobName: $('#taskName').val(),
+          taskType: select.getValue()
+        });
+      };
+
+      select.on('change', refreshGrid);
+      
+      // $('#taskName').val(taskName);
+
+      $('#doQuery').click(refreshGrid);
+
+      refreshGrid();
+
+    });
+
+    function getTaskName(){
+      return window.parent.getTaskName() || '';
+    };
+
+    function setTaskName(name){
+      return window.parent.setTaskName(name) || function(){};
+    };
+
+  </script>
+</body>
+</html>

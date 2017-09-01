@@ -1,0 +1,160 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.vigor.modules.jars.dao.FunctionParamDao">
+    
+	<sql id="functionParamColumns">
+		a.param_id AS "id",
+		a.function_id AS "functionId.id",
+		a.param_name AS "paramName",
+		a.param_index AS "paramIndex",
+		a.param_select AS "paramSelect",
+		a.param_type AS "paramType",
+		a.param_desc AS "paramDesc",
+		a.del_flag AS "delFlag"
+	</sql>
+	
+	<sql id="functionParamJoins">
+		LEFT JOIN e_function b ON b.function_id = a.function_id
+	</sql>
+	
+    
+	<select id="get" resultType="FunctionParam" >
+		SELECT 
+			<include refid="functionParamColumns"/>
+		FROM e_function_param a
+		<include refid="functionParamJoins"/>
+		WHERE a.function_id = #{id}
+	</select>
+	
+	<select id="findList" resultType="FunctionParam" >
+		SELECT 
+			<include refid="functionParamColumns"/>
+		FROM e_function_param a
+		<include refid="functionParamJoins"/>
+		<where>
+			
+			<if test="functionId.id != null and functionId.id != ''">
+				AND a.function_id = #{functionId.id}
+			</if>
+			<if test="paramName != null and paramName != ''">
+				AND a.param_name = #{paramName}
+			</if>
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="findAllList" resultType="FunctionParam" >
+		SELECT 
+			<include refid="functionParamColumns"/>
+		FROM e_function_param a
+		<include refid="functionParamJoins"/>
+		<where>
+			
+		</where>		
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+			</otherwise>
+		</choose>
+	</select>
+	
+	<insert id="insert" useGeneratedKeys="true" keyColumn="id"
+		keyProperty="id" parameterType="FunctionParam">
+		INSERT INTO e_function_param(
+			
+			function_id,
+			param_name,
+			param_index,
+			param_select,
+			param_type,
+			param_desc
+		) VALUES (
+			
+			#{functionId.id},
+			#{paramName},
+			#{paramIndex},
+			#{paramSelect},
+			#{paramType},
+			#{paramDesc}
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE e_function_param SET 	
+		
+			param_name = #{paramName},
+			param_index = #{paramIndex},
+			param_select = #{paramSelect},
+			param_type = #{paramType},
+			param_desc = #{paramDesc}
+		WHERE param_id = #{id}
+	</update>
+	
+	
+	<!--物理删除-->
+	<update id="delete">
+		DELETE FROM e_function_param
+		<choose>
+			<when test="id !=null and id != ''">
+				WHERE param_id = #{id}
+			</when>
+			<otherwise>
+				WHERE function_id = #{functionId.id}
+			</otherwise>
+		</choose>
+	</update>
+	
+	<!--逻辑删除-->
+	<update id="deleteByLogic">
+		UPDATE e_function_param SET 
+			del_flag = #{DEL_FLAG_DELETE}
+		<choose>
+			<when test="id !=null and id != ''">
+				WHERE param_id = #{id}
+			</when>
+			<otherwise>
+				WHERE function_id = #{functionId.id}
+			</otherwise>
+		</choose>
+	</update>
+	
+	
+	<!-- 根据实体名称和字段名称和字段值获取唯一记录 -->
+	<select id="findUniqueByProperty" resultType="FunctionParam" statementType="STATEMENT">
+		select * FROM e_function_param  where ${propertyName} = '${value}'
+	</select>
+	
+	<select id="findParamsByFunctionId" resultType="map" parameterType="int">
+		select
+		<include refid="functionParamColumns"/>
+		FROM e_function_param a 
+		<where>
+			a.function_id=#{functionId}
+		</where>
+	</select>
+	
+	<select id="findParamsNameByFunctionId" resultType="String" parameterType="int">
+		select
+			a.param_name
+		FROM e_function_param a 
+		<where>
+			<if test="flag==1">
+				and a.param_name not in('input_ip','input_port','input_dbpwd','input_username','input_delimiters','input_db_dir_name','input_table_file_name',
+								  'output_ip','output_port','output_username','output_pwd','output_db_dir_name',
+								  'output_table_file_name','output_delimiters','input_hbase_map','input_column_family',
+								  'output_hbase_map','output_column_family','input_fields','output_partition_info','output_partition_path') 
+			</if>
+			and a.function_id=#{functionId}
+		</where>
+		order by a.param_index
+	</select>
+	
+</mapper>

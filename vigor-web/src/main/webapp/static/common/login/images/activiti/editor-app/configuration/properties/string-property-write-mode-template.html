@@ -1,0 +1,16 @@
+
+<div ng-controller="KisBpmStringPropertyCtrl" ng-if="property.title == '名称' || property.title == '类名'">
+    <input type="text" ng-model="property.value"
+    		readonly="readonly" 
+    	   class="form-control" 
+           ng-focus="true"
+           ng-focus-lost="inputBlurred()"
+           ui-keypress="{13:'enterPressed($event)'}"/>
+</div>
+<div ng-controller="KisBpmStringPropertyCtrl" ng-if="property.title != '名称' && property.title != '类名'">
+    <input type="text" disabled ng-model="property.value"
+    	   class="form-control" 
+           ng-focus="true"
+           ng-focus-lost="inputBlurred()"
+           ui-keypress="{13:'enterPressed($event)'}"/>
+</div>

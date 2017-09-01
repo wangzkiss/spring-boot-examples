@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.vigor.modules.dataservice.dao.EServiceProDao">
+    
+	<sql id="eServiceProColumns">
+		a.id AS "id",
+		a.service_id AS "serviceId",
+		a.pro_name AS "proName",
+		a.pro_type AS "proType",
+		a.pro_desc AS "proDesc"
+	</sql>
+	
+	<sql id="eServiceProJoins">
+		LEFT JOIN e_service_info b ON b.service_id = a.service_id
+	</sql>
+	
+    
+	<select id="get" resultType="EServicePro" >
+		SELECT 
+			<include refid="eServiceProColumns"/>
+		FROM e_service_pro a
+		<include refid="eServiceProJoins"/>
+		WHERE a.id = #{id}
+	</select>
+	
+	<select id="findList" resultType="EServicePro" >
+		SELECT 
+			<include refid="eServiceProColumns"/>
+		FROM e_service_pro a
+		<include refid="eServiceProJoins"/>
+		<where>
+			
+			<if test="serviceId != null and serviceId != ''">
+				AND a.service_id = #{serviceId}
+			</if>
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="findAllList" resultType="EServicePro" >
+		SELECT 
+			<include refid="eServiceProColumns"/>
+		FROM e_service_pro a
+		<include refid="eServiceProJoins"/>
+		<where>
+			
+		</where>		
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+			</otherwise>
+		</choose>
+	</select>
+	
+	<insert id="insert">
+		INSERT INTO e_service_pro(
+			id,
+			service_id,
+			pro_name,
+			pro_type,
+			pro_desc
+		) VALUES (
+			#{id},
+			#{serviceId},
+			#{proName},
+			#{proType},
+			#{proDesc}
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE e_service_pro SET 	
+			service_id = #{serviceId},
+			pro_name = #{proName},
+			pro_type = #{proType},
+			pro_desc = #{proDesc}
+		WHERE id = #{id}
+	</update>
+	
+	
+	<!--物理删除-->
+	<update id="delete">
+		DELETE FROM e_service_pro
+		<choose>
+			<when test="id !=null and id != ''">
+				WHERE id = #{id}
+			</when>
+			<otherwise>
+				WHERE service_id = #{serviceId}
+			</otherwise>
+		</choose>
+	</update>
+	
+	<!--逻辑删除-->
+	<update id="deleteByLogic">
+		UPDATE e_service_pro SET 
+			del_flag = #{DEL_FLAG_DELETE}
+		<choose>
+			<when test="id !=null and id != ''">
+				WHERE id = #{id}
+			</when>
+			<otherwise>
+				WHERE service_id = #{serviceId}
+			</otherwise>
+		</choose>
+	</update>
+		
+	<delete id="deleteServiceProByServiceId" parameterType="int">
+	delete from e_service_pro where service_id = #{serviceId}
+	</delete>
+	
+	<!-- 根据实体名称和字段名称和字段值获取唯一记录 -->
+	<select id="findUniqueByProperty" resultType="EServicePro" statementType="STATEMENT">
+		select * FROM e_service_pro  where ${propertyName} = '${value}'
+	</select>
+	
+</mapper>

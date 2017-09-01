@@ -1,0 +1,326 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.vigor.modules.meta.dao.MetaSourceDao">
+    
+	<sql id="metaSourceColumns">
+		a.id AS "id",
+		a.repo_id AS "repoId.id",
+		b.repo_name AS "repoId.repoName",
+		b.conn_name AS "repoId.connName",
+		a.source_name AS "sourceName",
+		a.source_type AS "sourceType",
+		a.delimiter AS "delimiter",
+		a.source_desc AS "sourceDesc",
+		a.source_file AS "sourceFile",
+		a.external AS "external",
+		a.create_time AS "createDate",
+		a.create_user AS "createBy.name",
+		a.update_time AS "updateDate",
+		IFNULL(tp.`share`,"N") as "share",
+		a.del_flag AS "delFlag"
+	</sql>
+	
+	
+	
+	<sql id="admin_metaSourceColumns">
+		a.id AS "id",
+		a.repo_id AS "repoId.id",
+		b.repo_name AS "repoId.repoName",
+		b.conn_name AS "repoId.connName",
+		a.source_name AS "sourceName",
+		a.source_type AS "sourceType",
+		a.external AS "external",
+		a.delimiter AS "delimiter",
+		a.source_desc AS "sourceDesc",
+		a.source_file AS "sourceFile",
+		a.create_time AS "createDate",
+		a.create_user AS "createBy.name",
+		a.update_time AS "updateDate",
+		a.del_flag AS "delFlag"
+	</sql>
+		
+	<sql id="metaSourceJoinsRepo">
+		LEFT JOIN e_meta_repo as b ON a.repo_id=b.id
+	</sql>
+	
+	 <sql id="metaSourceJoinsRepoWithNo">
+	    JOIN e_meta_repo as b ON a.repo_id=b.id AND b.repo_name not like '%${%' AND a.source_name not like '%${%'
+	    <if test="sourceType!=null">
+				and a.source_type=#{sourceType}
+		</if> 
+	</sql>
+	
+	<sql id="metaSourceJoins">
+		LEFT JOIN e_data_permission as tp ON a.id=tp.data_id AND tp.data_type='source'
+	</sql>
+    
+	<select id="get" resultType="MetaSource">
+		SELECT  DISTINCT
+			<include refid="admin_metaSourceColumns"/>
+		FROM e_meta_source a
+		<include refid="metaSourceJoinsRepo"/>
+		WHERE a.id = #{id} 
+	</select>
+	
+	<select id="findList" resultType="MetaSource">
+		SELECT DISTINCT
+		
+			<if test="isAdmin==1">
+				<include refid="admin_metaSourceColumns"/>
+			</if>
+			<if test="isAdmin!=1">
+				<include refid="metaSourceColumns"/>
+			</if> 		
+			
+		FROM e_meta_source a
+		<include refid="metaSourceJoinsRepo"/>
+		<if test="isAdmin!=1">
+			<include refid="metaSourceJoins"/>
+		</if> 	
+		<where>
+			a.del_flag = #{DEL_FLAG_NORMAL}
+			<if test="isAdmin!=1">
+				and ( tp.user_id=#{createBy.id} and tp.`query`='Y')
+			</if> 	
+			<if test="repoId!=null and repoId.id != null and repoId.id != ''">
+				AND a.repo_id = #{repoId.id}
+			</if>
+			<if test="sourceType != 0">
+				AND a.source_type = #{sourceType}
+			</if>  
+			<if test="sourceName != null and sourceName != ''">
+				AND a.source_name like
+				<if test="dbName == 'oracle'">'%'||#{sourceName}||'%'</if>
+				<if test="dbName == 'mysql'">CONCAT('%', #{sourceName}, '%')</if>
+			</if>
+			<if test="sourceFile != null and sourceFile != ''">
+				AND a.source_file like
+				<if test="dbName == 'oracle'">'%'||#{sourceFile}||'%'</if>
+				<if test="dbName == 'mysql'">CONCAT('%', #{sourceFile}, '%')</if>
+			</if>
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="findAllList" resultType="MetaSource">
+		SELECT DISTINCT
+			<include refid="metaSourceColumns"/>
+		FROM e_meta_source a
+		<include refid="metaSourceJoinsRepo"/>
+		<include refid="metaSourceJoins"/>
+		<where>
+			a.del_flag = #{DEL_FLAG_NORMAL}
+			and 1=#{createBy.id} or ((tp.user_id=#{createBy.id} or tp.office_id=#{createBy.office.id}) and tp.`query`='Y')
+		</where>		
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+			</otherwise>
+		</choose>
+	</select>
+	
+	<insert id="insert" useGeneratedKeys="true" keyColumn="id"
+		keyProperty="id" parameterType="MetaSource">
+		INSERT INTO e_meta_source(
+			
+			repo_id,
+			source_name,
+			source_type,
+			delimiter,
+			source_desc,
+			source_file,
+			external ,
+			create_time,
+			create_user,
+			update_time,
+			del_flag
+		) VALUES (
+			
+			#{repoId.id},
+			#{sourceName},
+			#{sourceType},
+			#{delimiter},
+			#{sourceDesc},
+			#{sourceFile},
+			#{external},
+			#{createDate},
+			#{createBy.name},
+			#{updateDate},
+			#{delFlag}
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE e_meta_source SET 	
+			repo_id = #{repoId.id},
+			source_name = #{sourceName},
+			source_type = #{sourceType},
+			delimiter = #{delimiter},
+			external = #{external},
+			source_desc = #{sourceDesc},
+			source_file = #{sourceFile},
+			update_time = #{updateDate},
+			del_flag = #{delFlag}
+		WHERE id = #{id}
+	</update>
+	
+	
+	<!--物理删除-->
+	<update id="delete">
+		DELETE FROM e_meta_source
+		<choose>
+			<when test="id !=null and id != ''">
+				WHERE id = #{id}
+			</when>
+			<otherwise>
+				WHERE repo_id = #{repoId.id}
+			</otherwise>
+		</choose>
+	</update>
+	
+	<!--逻辑删除-->
+	<update id="deleteByLogic">
+		UPDATE e_meta_source SET 
+			del_flag = #{DEL_FLAG_DELETE}
+		<choose>
+			<when test="id !=null and id != ''">
+				WHERE id = #{id}
+			</when>
+			<otherwise>
+				WHERE repo_id = #{repoId.id}
+			</otherwise>
+		</choose>
+	</update>
+	
+	
+	<!-- 根据实体名称和字段名称和字段值获取唯一记录 -->
+	<select id="findUniqueByProperty" resultType="MetaSource" statementType="STATEMENT">
+		select 
+			a.id AS "id",
+			a.repo_id AS "repoId.id",
+			a.source_name AS "sourceName",
+			a.source_type AS "sourceType",
+			a.delimiter AS "delimiter",
+			a.source_desc AS "sourceDesc",
+			a.source_file AS "sourceFile",
+			a.create_time AS "createDate",
+			a.external AS "external",
+			a.create_user AS "createBy.name",
+			a.update_time AS "updateDate",
+			a.del_flag AS "delFlag"
+		FROM e_meta_source as a  where ${propertyName} = '${value}'
+	</select>
+	<select id="findEtlFlow" resultType="map" parameterType="String">
+		SELECT 
+			input.task_id AS taskId,
+			t.task_name AS taskName,
+			t.task_type  AS taskType,
+			#j.start_time AS startTime,
+			#j.end_time AS endTime,
+			#j.job_id,
+			IFNULL(su.source_name,stin.store_name) as inputName ,
+			IFNULL(su.source_type,stin.store_type) as inputType,
+			IFNULL(res.result_name,stout.store_name) as outputName,
+			IFNULL(res.result_type,stout.store_type)as outputType,
+			input.input_id as inputId,
+			input.input_type,
+			output.output_id as outputId,
+			output.output_type
+		FROM
+			e_task_input AS input
+			LEFT JOIN e_task_output AS output ON input.task_id=output.task_id
+			LEFT JOIN e_task as t ON t.task_id=input.task_id
+			#LEFT JOIN e_job as j ON t.task_id=j.task_id
+			LEFT JOIN e_meta_source as su ON su.id=input.input_id  AND input.input_type=0
+			LEFT JOIN e_meta_store as stout ON stout.id=output.output_id AND output.output_type=1
+			LEFT JOIN e_meta_store as stin ON stin.id=input.input_id  AND input.input_type=1
+			LEFT JOIN e_meta_result as res ON res.id=output.output_id AND output.output_type=0
+			#input.input_id=550 
+			#(output.output_id=472  AND output.output_type=1) or (input.input_id=472 AND input.input_type=1)
+			#output.output_id=9 AND output.output_type=0
+		WHERE   
+			input.input_id=#{id} and input.input_type=0
+	</select>
+	<select id="findCalFlow" resultType="map" parameterType="String">
+		SELECT 
+			input.task_id AS taskId,
+			t.task_name AS taskName,
+			t.task_type  AS taskType,
+			#j.start_time AS startTime,
+			#j.end_time AS endTime,
+			#j.job_id,
+			IFNULL(su.source_name,stin.store_name) as inputName,
+			IFNULL(su.source_type,stin.store_type) as inputType,
+			IFNULL(res.result_name,stout.store_name) as outputName,
+			IFNULL(res.result_type,stout.store_type)as outputType,
+			input.input_id as inputId,
+			input.input_type,
+			output.output_id as outputId,
+			output.output_type
+		FROM
+			e_task_input AS input
+			LEFT JOIN e_task_output AS output ON input.task_id=output.task_id
+			LEFT JOIN e_task as t ON t.task_id=input.task_id
+			#LEFT JOIN e_job as j ON t.task_id=j.task_id
+			LEFT JOIN e_meta_source as su ON su.id=input.input_id  AND input.input_type=0
+			LEFT JOIN e_meta_store as stout ON stout.id=output.output_id AND output.output_type=1
+			LEFT JOIN e_meta_store as stin ON stin.id=input.input_id  AND input.input_type=1
+			LEFT JOIN e_meta_result as res ON res.id=output.output_id AND output.output_type=0
+			#input.input_id=550 
+			#(output.output_id=472  AND output.output_type=1) or (input.input_id=472 AND input.input_type=1)
+			#output.output_id=9 AND output.output_type=0
+		WHERE   
+			input.input_id=#{id} and input.input_type=1
+	</select>
+	
+	<select id="findAllMetaSource" resultType="map" parameterType="map">
+		SELECT DISTINCT
+			a.id AS "id",
+			a.repo_id AS "repoId",
+			b.repo_name AS "repoName",
+			b.repo_instance AS "repoInstance",
+			b.conn_name AS "connName",
+			b.ip AS "ip",
+			b.repo_name AS "repoName",
+			b.conn_name AS "connName",
+			a.external AS "external",
+			b.user_name AS "userName",
+			b.user_pwd AS "userPwd",
+			b.port AS "port",
+			a.source_name AS "sourceName",
+			a.source_type AS "sourceType",
+			a.delimiter AS "delimiter",
+			a.source_desc AS "sourceDesc",
+			a.source_file AS "sourceFile"
+		FROM e_meta_source a
+		<include refid="metaSourceJoinsRepoWithNo"/>
+		<include refid="metaSourceJoins"/>
+		<where>
+		    a.source_name not like #{parKey} 
+			and 1=#{createUserId} or ((tp.user_id=#{createUserId}) and tp.`query`='Y')
+		</where>
+		order by a.create_time desc		
+	</select>
+	
+	<select id="getBySourceName" resultType="MetaSource">
+		select
+			a.id AS "id",
+			a.repo_id AS "repoId",
+			a.external AS "external",
+			a.source_name AS "sourceName",
+			a.source_type AS "sourceType",
+			a.delimiter AS "delimiter",
+			a.source_desc AS "sourceDesc",
+			a.source_file AS "sourceFile"
+		FROM e_meta_source a
+		where a.source_name = #{sourceName}
+	</select>
+</mapper>

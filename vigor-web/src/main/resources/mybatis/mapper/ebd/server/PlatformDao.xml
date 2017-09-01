@@ -1,0 +1,252 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.vigor.modules.server.dao.PlatformDao">
+    
+	<sql id="platformColumns">
+		a.id AS "id",
+		a.platform_name AS "platformName",
+		a.platform_ip AS "platformIp",
+		a.platform_port AS "platformPort",
+		a.platform_dir AS "platformDir",
+		a.platform_url AS "platformUrl",
+		a.platform_state AS "platformState",
+		a.platform_type AS "platformType",
+		a.create_by AS "createBy.name",
+		a.create_date AS "createDate",
+		a.update_by AS "updateBy.name",
+		a.update_date AS "updateDate",
+		a.remarks AS "remarks",
+		a.del_flag AS "delFlag"
+	</sql>
+	
+	<sql id="platformJoins">
+	</sql>
+	<select id="getOne" resultType="Platform"  parameterType="Platform">
+		SELECT 
+			<include refid="platformColumns"/>
+		FROM e_platform a
+		WHERE a.platform_name LIKE 
+		<if test="dbName == 'oracle'">'%'||#{platformName}||'%'</if>
+		<if test="dbName == 'mssql'">'%'+#{platformName}+'%'</if>
+		<if test="dbName == 'mysql'">concat('%',#{platformName},'%')</if>
+		limit 1
+	</select>
+    <select id="getInfoByName" resultType="Platform"  parameterType="String">
+		SELECT 
+			<include refid="platformColumns"/>
+		FROM e_platform a
+		WHERE a.platform_name LIKE concat('%',#{platformName},'%')
+		limit 1
+	</select>
+	<select id="get" resultType="Platform" >
+		SELECT 
+			<include refid="platformColumns"/>
+		FROM e_platform a
+		<include refid="platformJoins"/>
+		WHERE a.id = #{id}
+	</select>
+	
+	<select id="findList" resultType="Platform" >
+		SELECT 
+			<include refid="platformColumns"/>
+		FROM e_platform a
+		<include refid="platformJoins"/>
+		<where>
+			a.del_flag = #{DEL_FLAG_NORMAL}
+			and a.platform_type = #{platformType}
+			<if test="platformName != null and platformName != ''">
+				AND a.platform_name LIKE 
+					<if test="dbName == 'oracle'">'%'||#{platformName}||'%'</if>
+					<if test="dbName == 'mssql'">'%'+#{platformName}+'%'</if>
+					<if test="dbName == 'mysql'">concat('%',#{platformName},'%')</if>
+			</if>
+			<if test="platformIp != null and platformIp != ''">
+				AND a.platform_ip LIKE 
+					<if test="dbName == 'oracle'">'%'||#{platformIp}||'%'</if>
+					<if test="dbName == 'mssql'">'%'+#{platformIp}+'%'</if>
+					<if test="dbName == 'mysql'">concat('%',#{platformIp},'%')</if>
+			</if>
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY a.update_date DESC
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="findAllList" resultType="Platform" >
+		SELECT 
+			<include refid="platformColumns"/>
+		FROM e_platform a
+		<include refid="platformJoins"/>
+		<where>
+			a.del_flag = #{DEL_FLAG_NORMAL}
+		</where>		
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY a.update_date DESC
+			</otherwise>
+		</choose>
+	</select>
+	
+	<insert id="insert" useGeneratedKeys="true" keyColumn="id"
+		keyProperty="id" parameterType="Platform">
+		INSERT INTO e_platform(
+			
+			platform_name,
+			platform_ip,
+			platform_port,
+			platform_dir,
+			platform_url,
+			platform_state,
+			platform_type,
+			create_by,
+			create_date,
+			update_by,
+			update_date,
+			remarks,
+			del_flag
+		) VALUES (
+			
+			#{platformName},
+			#{platformIp},
+			#{platformPort},
+			#{platformDir},
+			#{platformUrl},
+			#{platformState},
+			#{platformType},
+			#{createBy.name},
+			#{createDate},
+			#{updateBy.name},
+			#{updateDate},
+			#{remarks},
+			#{delFlag}
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE e_platform SET 	
+			platform_name = #{platformName},
+			platform_ip = #{platformIp},
+			platform_port = #{platformPort},
+			platform_dir = #{platformDir},
+			platform_url = #{platformUrl},
+			<!-- platform_state = #{platformState}, -->
+			<!-- platform_type = #{platformType}, -->
+			update_by = #{updateBy.name},
+			update_date = #{updateDate},
+			remarks = #{remarks}
+		WHERE id = #{id}
+	</update>
+	
+	<update id="updateStatus">
+		UPDATE e_platform SET 	
+			platform_state = #{platformState}
+		WHERE id = #{id}
+	</update>
+	
+	<!--物理删除-->
+	<update id="delete">
+		DELETE FROM e_platform
+		WHERE id = #{id}
+	</update>
+	
+	<!--逻辑删除-->
+	<update id="deleteByLogic">
+		UPDATE e_platform SET 
+			del_flag = #{DEL_FLAG_DELETE}
+		WHERE id = #{id}
+	</update>
+	
+	
+	<!-- 根据实体名称和字段名称和字段值获取唯一记录 -->
+	<select id="findUniqueByProperty" resultType="Platform" statementType="STATEMENT">
+		select * FROM e_platform  where ${propertyName} = '${value}'
+	</select>
+	
+	<select id="etlclusterFields" parameterType="ClusterParam" resultType="map" >
+	
+		SELECT
+			date_format(j.statistics_day,#{keyDate}) as keyDate,
+			j.all_count as "totalCount",
+			j.running_count as "runCount",
+			j.success_count as "successCount",
+			j.fail_count as "failCount"
+		from e_job_report j
+		where 
+		(j.statistics_day BETWEEN date_format(#{startDate},#{keyDate}) AND date_format(#{endDate},#{keyDate}))
+		AND ( j.task_type=1 OR j.task_type=2 )
+		GROUP BY date_format(j.statistics_day,#{keyDate})
+	</select>
+	<select id="findClusterStatus" parameterType="String" resultType="map">
+		SELECT
+		COUNT(if (node_state=1,0,null)) as started_count,
+		COUNT(*) as  total_count
+		FROM
+		e_platform_node
+		WHERE platform_id=#{id}
+	</select>
+	
+	<select id="findJobStatus" resultType="map" parameterType="Platform">
+		SELECT
+			Count(if(job_status=1,0,null )) AS pendingauditCount,
+			Count(if(exec_status=2,0,null )) AS runingCount
+		FROM
+		e_job
+		<if test="isAdmin!=1">
+			where create_user=#{createBy.name}
+		</if> 
+		
+	</select>
+	<select id="findBasicInfo" resultType="map">
+		SELECT * FROM (
+			SELECT
+			p.platform_port as  hdfsPort,
+			p.platform_ip as hadoopMaster,
+			pn.node_ip as  hadoopBackMaster,
+			pn.node_password AS ssh_username,
+			pn.node_user AS ssh_password
+			FROM
+			e_platform p  
+			LEFT JOIN e_platform_node pn ON p.id=pn.platform_id AND p.platform_ip != pn.node_ip
+			WHERE p.platform_name="hadoop_hdfs"  AND pn.node_type=1 
+			) t1  
+			LEFT JOIN (
+			SELECT
+			p.platform_port as  hivePort,
+			p.platform_ip as hive_master_ip,
+			p.platform_dir as hiveHdfsDir
+			FROM
+			e_platform p  
+			WHERE p.platform_name="hadoop_hive"
+			) t2 ON 1=1
+			LEFT JOIN (
+			SELECT
+			p.platform_ip as etl_master_ip,
+			p.platform_dir as  etl_server_home,
+			pn.node_password AS etl_server_rootpwd,
+			pn.node_user AS etl_root
+			FROM
+			e_platform p  
+			LEFT JOIN e_platform_node pn ON p.id=pn.platform_id  AND p.platform_ip = pn.node_ip
+			WHERE p.platform_name="etl_cluster"  
+		) t3 ON 1=1
+		LEFT JOIN (
+			SELECT GROUP_CONCAT(tt.node_ip) zookeeper_ip from (
+				SELECT
+				pn.*
+				FROM
+				e_platform p  
+				LEFT JOIN e_platform_node pn ON p.id=pn.platform_id
+				WHERE p.platform_name="zookeeper"
+			) tt  
+			
+		) t4 ON 1=1
+	</select>
+</mapper>

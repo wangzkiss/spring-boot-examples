@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.vigor.modules.jars.dao.MapreduceJarDao">
+    
+	<sql id="mapreduceJarColumns">
+		a.jar_id AS "id",
+		a.jar_name AS "jarName",
+		a.jar_path AS "jarPath",
+		a.jar_type AS "jarType",
+		a.user_id AS "createBy.id",
+		a.jar_desc AS "remarks",
+		createBy.name AS "createBy.name",
+		a.upload_date AS "createDate"
+	</sql>
+	
+	<sql id="mapreduceJarJoins">
+		LEFT JOIN sys_user createBy ON createBy.id = a.user_id
+	</sql>
+	
+    
+	<select id="get" resultType="MapreduceJar" >
+		SELECT 
+			<include refid="mapreduceJarColumns"/>
+		FROM e_mapreduce_jar a
+		<include refid="mapreduceJarJoins"/>
+		WHERE a.jar_id = #{id}
+	</select>
+	
+	<select id="findList" resultType="MapreduceJar" >
+		SELECT 
+			<include refid="mapreduceJarColumns"/>
+		FROM e_mapreduce_jar a
+		<include refid="mapreduceJarJoins"/>
+		<where>
+			
+			<if test="jarName != null and jarName != ''">
+				AND a.jar_name like
+				<if test="dbName == 'oracle'">'%'||#{jarName}||'%'</if>
+				<if test="dbName == 'mysql'">CONCAT('%', #{jarName}, '%')</if>
+			</if>
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="findAllList" resultType="MapreduceJar" >
+		SELECT 
+			<include refid="mapreduceJarColumns"/>
+		FROM e_mapreduce_jar a
+		<include refid="mapreduceJarJoins"/>
+		<where>
+			
+		</where>		
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+			</otherwise>
+		</choose>
+	</select>
+	
+	<insert id="insert" useGeneratedKeys="true" keyColumn="id"
+		keyProperty="id" parameterType="MapreduceJar">
+		INSERT INTO e_mapreduce_jar(
+			
+			jar_name,
+			jar_path,
+			jar_type,
+			user_id,
+			jar_desc,
+			upload_date
+		) VALUES (
+			
+			#{jarName},
+			#{jarPath},
+			#{jarType},
+			#{createBy.id},
+			#{remarks},
+			#{createDate}
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE e_mapreduce_jar SET 	
+			jar_id = #{id},
+			jar_name = #{jarName},
+			jar_path = #{jarPath},
+			jar_type = #{jarType},
+			user_id = #{createBy.id},
+			upload_date = #{createDate}
+		WHERE jar_id = #{id}
+	</update>
+	
+	
+	<!--物理删除-->
+	<update id="delete">
+		DELETE FROM e_mapreduce_jar
+		WHERE jar_id = #{id}
+	</update>
+	
+	<!--逻辑删除-->
+	<update id="deleteByLogic">
+		UPDATE e_mapreduce_jar SET 
+			del_flag = #{DEL_FLAG_DELETE}
+		WHERE jar_id = #{id}
+	</update>
+	
+	<select id="isHaveFunction" resultType="int" parameterType="String">
+		SELECT 
+		COUNT(*) as num
+		FROM
+		e_function
+		WHERE 
+		jar_id=#{id}
+	</select>
+	
+	<!-- 根据实体名称和字段名称和字段值获取唯一记录 -->
+	<select id="findUniqueByProperty" resultType="MapreduceJar" statementType="STATEMENT">
+		select * FROM e_mapreduce_jar  where ${propertyName} = '${value}'
+	</select>
+	
+</mapper>

@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.vigor.modules.dataservice.dao.EServiceFunctionDao">
+    
+	<sql id="eServiceFunctionColumns">
+		a.service_id AS "serviceId",
+		a.function_id AS "functionId"
+	</sql>
+	
+	<sql id="eServiceFunctionJoins">
+		LEFT JOIN e_service_info b ON b.service_id = a.service_id
+	</sql>
+	
+    
+	<select id="get" resultType="EServiceFunction" >
+		SELECT 
+			<include refid="eServiceFunctionColumns"/>
+		FROM e_service_function a
+		<include refid="eServiceFunctionJoins"/>
+		WHERE a.function_id = #{functionId}
+	</select>
+	
+	<select id="findList" resultType="EServiceFunction" >
+		SELECT 
+			a.service_id AS "serviceId", 
+			c.function_id AS "func.id",
+			c.function_name AS "func.functionName",
+			c.function_type AS "func.functionType",
+			c.function_desc AS "func.functionDesc"
+		FROM e_service_function a
+		join e_service_info b on a.service_id = b.service_id 
+		join e_function c on a.function_id = c.function_id 
+		<where>
+			
+			<if test="serviceId != null and serviceId != ''">
+				AND a.service_id = #{serviceId}
+			</if>
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="findAllList" resultType="EServiceFunction" >
+		SELECT 
+			<include refid="eServiceFunctionColumns"/>
+		FROM e_service_function a
+		<include refid="eServiceFunctionJoins"/>
+		<where>
+			
+		</where>		
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+			</otherwise>
+		</choose>
+	</select>
+	
+	<insert id="insert">
+		INSERT INTO e_service_function(
+			service_id,
+			function_id
+		) VALUES (
+			#{serviceId},
+			#{func.id}
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE e_service_function SET 	
+			service_id = #{serviceId},
+			function_id = #{functionId}
+		WHERE service_id = #{serviceId} 
+		and function_id = #{functionId}
+	</update>
+	
+	
+	<!--物理删除-->
+	<update id="delete">
+		DELETE FROM e_service_function
+		<choose>
+			<when test="id !=null and id != ''">
+				WHERE id = #{id}
+			</when>
+			<otherwise>
+				WHERE service_id = #{serviceId}
+			</otherwise>
+		</choose>
+	</update>
+	
+	<!--逻辑删除-->
+	<update id="deleteByLogic">
+		UPDATE e_service_function SET 
+			del_flag = #{DEL_FLAG_DELETE}
+		<choose>
+			<when test="id !=null and id != ''">
+				WHERE id = #{id}
+			</when>
+			<otherwise>
+				WHERE service_id = #{serviceId}
+			</otherwise>
+		</choose>
+	</update>
+	
+	<delete id="deleteServiceFuncByServiceId" parameterType="int">
+	delete from e_service_function where service_id = #{serviceId}
+	</delete>	
+	
+	<!-- 根据实体名称和字段名称和字段值获取唯一记录 -->
+	<select id="findUniqueByProperty" resultType="EServiceFunction" statementType="STATEMENT">
+		select * FROM e_service_function  where ${propertyName} = '${value}'
+	</select>
+	
+</mapper>

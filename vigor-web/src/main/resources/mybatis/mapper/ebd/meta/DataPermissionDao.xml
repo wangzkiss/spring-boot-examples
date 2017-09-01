@@ -1,0 +1,199 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.vigor.modules.meta.dao.DataPermissionDao">
+    
+	<sql id="dataPermissionColumns">
+		a.id AS "id",
+		a.`data_type` AS "dataType",
+		a.`data_id` AS "dataId",
+		a.`office_id` AS "officeId",
+		a.`user_id` AS "user.id",
+		a.`query` AS "query",
+		a.`update` AS "update",
+		a.`delete` AS "delete",
+		a.`start` AS "start",
+		a.`stop` AS "stop",
+		a.`audit` AS "audit",
+		a.`assign` AS "assign",
+		a.`share` AS "share",
+		user.name AS "user.name"
+	</sql>
+	
+	<sql id="dataPermissionJoins">
+		LEFT JOIN e_meta_repo dataId ON dataId.id = a.`data_id`
+		LEFT JOIN sys_office officeId ON officeId.id = a.`office_id`
+		LEFT JOIN sys_user user ON user.id = a.`user_id`
+	</sql>
+	
+	<select id="getAllusers" resultType="DataPermission" parameterType="DataPermission">
+		SELECT
+			id AS "user.id",
+			NAME AS "user.name",
+			'N' AS "query",
+			'N' AS "update",
+			'N' AS "delete",
+			office_id AS officeId
+		FROM
+			sys_user  u 
+		WHERE
+			u.id NOT IN(	
+			SELECT  user_id FROM  sys_user_role WHERE role_id ='1c54e003c1fc4dcd9b087ef8d48abac3'
+		)
+		<if test="user != null and  user.name !=null and  user.name != ''">
+			AND u.`name` LIKE
+			<if test="dbName == 'oracle'">'%'||#{user.name}||'%'</if>
+			<if test="dbName == 'mysql'">CONCAT('%', #{user.name}, '%')</if>
+		</if>
+	</select>
+    
+     <select id="getDataPermissions" resultType="DataPermission" parameterType="DataPermission" >
+		SELECT
+			<include refid="dataPermissionColumns"/>
+		FROM e_data_permission a
+		<include refid="dataPermissionJoins"/>
+		WHERE
+		a.data_type = #{dataType} AND a.data_id =#{dataId} AND a.user_id NOT IN(
+			SELECT  user_id FROM  sys_user_role WHERE role_id ='1c54e003c1fc4dcd9b087ef8d48abac3'
+		)
+	</select>
+    
+    
+	<select id="get" resultType="DataPermission" >
+		SELECT 
+			<include refid="dataPermissionColumns"/>
+		FROM e_data_permission a
+		<include refid="dataPermissionJoins"/>
+		WHERE a.id = #{id}
+	</select>
+	
+	<select id="findList" resultType="DataPermission" >
+		SELECT 
+			<include refid="dataPermissionColumns"/>
+		FROM e_data_permission a
+		<include refid="dataPermissionJoins"/>
+		<where>
+			
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="findAllList" resultType="DataPermission" >
+		SELECT 
+			<include refid="dataPermissionColumns"/>
+		FROM e_data_permission a
+		<include refid="dataPermissionJoins"/>
+		<where>
+			
+		</where>		
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+			</otherwise>
+		</choose>
+	</select>
+	
+	<insert id="insert">
+		INSERT INTO e_data_permission(
+			<!-- id, -->
+			`data_type`,
+			`data_id`,
+			`office_id`,
+			`user_id`,
+			`query`,
+			`update`,
+			`delete`,
+			`start`,
+			`stop`,
+			`audit`,
+			`assign`,
+			`share`
+		) VALUES (
+			<!-- #{id}, -->
+			#{dataType},
+			#{dataId},
+			#{officeId},
+			#{user.id},
+			#{query},
+			#{update},
+			#{delete},
+			#{start},
+			#{stop},
+			#{audit},
+			#{assign},
+			#{share}
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE e_data_permission SET 	
+			`data_type` = #{dataType},
+			`data_id` = #{dataId},
+			`office_id` = #{officeId},
+			`user_id` = #{user.id},
+			`query` = #{query}
+			<!-- `update` = #{update},
+			`delete` = #{delete},
+			`start` = #{start},
+			`stop` = #{stop},
+			`audit` = #{audit},
+			`assign` = #{assign},
+			`share` = #{share} -->
+		WHERE `user_id` = #{user.id} and `data_type` = #{dataType} and `data_id` = #{dataId}
+	</update>
+	
+	
+	<!--物理删除-->
+	<update id="delete">
+	<!-- 	DELETE FROM e_data_permission
+		WHERE id = #{id}
+		 -->
+		DELETE FROM e_data_permission
+		WHERE e_data_permission.data_id=#{dataId}  
+		AND e_data_permission.user_id=#{user.id} 
+		AND e_data_permission.data_type=#{dataType}
+	</update>
+	
+	<!--逻辑删除-->
+	<update id="deleteByLogic">
+		UPDATE e_data_permission SET 
+			del_flag = #{DEL_FLAG_DELETE}
+		WHERE id = #{id}
+	</update>
+	
+	
+	<!-- 根据实体名称和字段名称和字段值获取唯一记录 -->
+	<select id="findUniqueByProperty" resultType="DataPermission" statementType="STATEMENT">
+		select * FROM e_data_permission  where ${propertyName} = '${value}'
+	</select>
+	
+	<select id="findListBydataId" resultType="MetaRepo">
+		SELECT 
+			*
+		FROM e_meta_repo a
+		<where>
+			a.del_flag = #{DEL_FLAG_NORMAL}
+			<if test="connName != null and connName != ''">
+				AND a.connName LIKE 
+				<if test="dbName == 'oracle'">#{connName}||'%'</if>
+				<if test="dbName == 'mssql'">#{connName}+'%'</if>
+				<if test="dbName == 'mysql'">concat(#{connName},'%')</if>
+			</if>
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY a.update_date DESC
+			</otherwise>
+		</choose>
+	</select>
+</mapper>

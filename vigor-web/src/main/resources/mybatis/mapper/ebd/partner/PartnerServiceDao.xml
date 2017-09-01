@@ -1,0 +1,128 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.vigor.modules.partner.dao.PartnerServiceDao">
+    
+	<sql id="partnerServiceColumns">
+		a.service_id AS "serviceId",
+		a.partner_id AS "partnerId"
+	</sql>
+	
+	<sql id="partnerServiceJoins">
+		LEFT JOIN e_partner b ON b.partner_id = a.partner_id
+	</sql>
+	
+    
+	<select id="get" resultType="PartnerServ" >
+		SELECT 
+			<include refid="partnerServiceColumns"/>
+		FROM e_partner_service a
+		<include refid="partnerServiceJoins"/>
+		WHERE a.id = #{id}
+	</select>
+	
+	<select id="findParnterServiceByParnterId" resultType="PartnerServ" parameterType="int">
+		SELECT 
+			B.partner_id AS "partnerId", 
+			C.service_id AS "service.serviceId", 
+			C.service_name AS "service.serviceName", 
+			C.service_type AS "service.serviceType", 
+			C.service_desc AS "service.serviceDesc" 
+		FROM e_partner_service a 
+		join e_partner B on a.partner_id = b.partner_id 
+		join e_service_info C on a.service_id = c.service_id 
+		where a.partner_id = #{partnerId} 
+	</select>
+	
+	<select id="findList" resultType="PartnerServ" >
+		SELECT 
+			<include refid="partnerServiceColumns"/>
+		FROM e_partner_service a
+		<include refid="partnerServiceJoins"/>
+		<where>
+			
+			<if test="partnerId != null and partnerId != ''">
+				AND a.partner_id = #{partnerId}
+			</if>
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="findAllList" resultType="PartnerServ" >
+		SELECT 
+			<include refid="partnerServiceColumns"/>
+		FROM e_partner_service a
+		<include refid="partnerServiceJoins"/>
+		<where>
+			
+		</where>		
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+			</otherwise>
+		</choose>
+	</select>
+	
+	<insert id="insert">
+		INSERT INTO e_partner_service(
+			service_id,
+			partner_id
+		) VALUES (
+			#{service.serviceId},
+			#{partnerId}
+		)
+	</insert>
+	
+	<delete id="deletePartnerServiceByPartnerId" parameterType="int">
+	delete from e_partner_service where partner_id = #{partnerId}
+	</delete>
+	
+	<update id="update">
+		UPDATE e_partner_service SET 	
+			service_id = #{serviceId},
+			partner_id = #{partnerId}
+		WHERE id = #{id}
+	</update>
+	
+	
+	<!--物理删除-->
+	<update id="delete">
+		DELETE FROM e_partner_service
+		<choose>
+			<when test="id !=null and id != ''">
+				WHERE id = #{id}
+			</when>
+			<otherwise>
+				WHERE partner_id = #{partnerId}
+			</otherwise>
+		</choose>
+	</update>
+	
+	<!--逻辑删除-->
+	<update id="deleteByLogic">
+		UPDATE e_partner_service SET 
+			del_flag = #{DEL_FLAG_DELETE}
+		<choose>
+			<when test="id !=null and id != ''">
+				WHERE id = #{id}
+			</when>
+			<otherwise>
+				WHERE partner_id = #{partnerId}
+			</otherwise>
+		</choose>
+	</update>
+	
+	
+	<!-- 根据实体名称和字段名称和字段值获取唯一记录 -->
+	<select id="findUniqueByProperty" resultType="PartnerServ" statementType="STATEMENT">
+		select * FROM e_partner_service  where ${propertyName} = '${value}'
+	</select>
+	
+</mapper>

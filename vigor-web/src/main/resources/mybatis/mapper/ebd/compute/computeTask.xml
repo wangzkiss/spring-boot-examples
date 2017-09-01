@@ -1,0 +1,956 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.vigor.modules.compute.dao.ComputeTaskDao">
+
+	<resultMap type="Source" id="sourceMap">
+		<id property="id" column="store_id" />
+		<result property="name" column="store_name" />
+		<result property="type" column="store_type" />
+		<result property="desc" column="store_desc" />
+		<result property="ip" column="store_ip" />
+		<result property="port" column="store_port" />
+		<result property="file" column="store_file" />
+		<result property="dir" column="store_dir" />
+		<result property="typeName" column="type_name" />
+		<collection property="fields" ofType="SourceField">
+			<id property="id" column="pro_id" />
+			<result property="storeId" column="store_id" />
+			<result property="index" column="pro_index" />
+			<result property="name" column="pro_name" />
+			<result property="type" column="pro_type" />
+			<result property="dataFormat" column="data_format" />
+			<result property="desc" column="pro_desc" />
+		</collection>
+	</resultMap>
+
+	<resultMap type="Source" id="mongoSourceMap">
+		<id property="id" column="source_id" />
+		<result property="name" column="source_name" />
+		<result property="type" column="source_type" />
+		<result property="desc" column="source_desc" />
+		<result property="ip" column="source_ip" />
+		<result property="port" column="source_port" />
+		<result property="file" column="source_file" />
+		<result property="dir" column="source_dir" />
+		<result property="typeName" column="type_name" />
+		<collection property="fields" ofType="SourceField">
+			<id property="id" column="pro_id" />
+			<result property="storeId" column="source_id" />
+			<result property="index" column="pro_index" />
+			<result property="name" column="pro_name" />
+			<result property="type" column="pro_type" />
+			<result property="desc" column="pro_desc" />
+		</collection>
+	</resultMap>
+
+	<resultMap type="Source" id="ETLsourceMap">
+		<id property="id" column="source_id" />
+		<result property="name" column="source_name" />
+		<result property="type" column="source_type" />
+		<result property="desc" column="source_desc" />
+		<result property="ip" column="source_ip" />
+		<result property="port" column="source_port" />
+		<result property="file" column="source_file" />
+		<result property="dir" column="source_dir" />
+		<collection property="fields" ofType="SourceField">
+			<id property="id" column="pro_id" />
+			<result property="sourceId" column="source_id" />
+			<result property="index" column="pro_index" />
+			<result property="name" column="pro_name" />
+			<result property="type" column="pro_type" />
+			<result property="desc" column="pro_desc" />
+		</collection>
+	</resultMap>
+
+	<resultMap type="cn.vigor.modules.compute.bean.Output" id="outputMap">
+		<id property="id" column="result_id" />
+		<result property="name" column="result_name" />
+		<result property="type" column="result_type" />
+		<result property="desc" column="result_desc" />
+		<result property="delimiter" column="delimiter" />
+		<result property="ip" column="result_ip" />
+		<result property="port" column="result_port" />
+		<result property="file" column="result_file" />
+		<result property="dir" column="result_dir" />
+		<collection property="fields" ofType="OutputField">
+			<id property="id" column="pro_id" />
+			<result property="resultId" column="result_id" />
+			<result property="index" column="pro_index" />
+			<result property="name" column="pro_name" />
+			<result property="type" column="pro_type" />
+			<result property="desc" column="pro_desc" />
+		</collection>
+	</resultMap>
+
+	<resultMap type="ComputeFunction" id="functionMap">
+		<id property="id" column="function_id" />
+		<result property="name" column="function_name" />
+		<result property="desc" column="function_desc" />
+		<result property="functionClassName" column="function_class" />
+		<result property="jarId" column="jar_id" />
+		<result property="ruleType" column="rule_type" />
+		<result property="ruleExpression" column="rule_expression" />
+		<result property="type" column="function_type" />
+		<result property="expansionField" column="expansion_field" />
+		<result property="paraNumber" column="param_nums" />
+		<result property="paraType" column="param_type" />
+		<result property="returnType" column="return_type" />
+		<result property="userName" column="username" />
+		<result property="passWord" column="password" />
+		<result property="ip" column="ip" />
+		<result property="port" column="port" />
+		<result property="dbName" column="dbname" />
+		<result property="dbType" column="dbtype" />
+	</resultMap>
+	
+	<resultMap type="ComputeFunctionParam" id="functionParamMap">
+		<id property="paramId" column="param_id" />
+		<result property="functionId" column="function_id" />
+		<result property="paramName" column="param_name" />
+		<result property="paramIndex" column="param_index" />
+		<result property="paramSelect" column="param_select" />
+		<result property="paramType" column="param_type" />
+		<result property="paramDesc" column="param_desc" />
+	</resultMap>
+
+	<!-- <resultMap type="Model" id="modelMap">
+		<id property="id" column="model_id" />
+		<result property="name" column="model_name" />
+		<result property="desc" column="model_desc" />
+		<result property="modelClassName" column="model_class" />
+		<result property="jarId" column="jar_id" />
+		<result property="ruleType" column="rule_type" />
+		<result property="ruleExpression" column="rule_expression" />
+		<result property="type" column="model_type" />
+		<result property="paraNumber" column="param_nums" />
+		<result property="paraType" column="param_type" />
+		<result property="returnType" column="return_type" />
+	</resultMap> -->
+
+	<resultMap type="SelfProgramArgument" id="selfProgramArgumentMap">
+		<id property="paramId" column="param_id" />
+		<result property="name" column="param_name" />
+		<result property="paramType" column="param_type" />
+		<result property="paramDesc" column="param_desc" />
+		<result property="paraNumber" column="param_nums" />
+		<result property="paramType" column="param_type" />
+		<result property="paramSelect" column="param_select" />
+		<result property="functionId" column="function_id" />
+	</resultMap>
+
+	<resultMap type="Dateparams" id="dateparamsMap">
+		<id property="id" column="id" />
+		<result property="name" column="name" />
+		<result property="desc" column="desc" />
+		<result property="value" column="value" />
+	</resultMap>
+	
+	<!-- <resultMap type="LoginUserInfo" id="loginUserInfoMap">
+		<id property="userId" column="userid" />
+		<result property="loginUser" column="username" />
+		<result property="usernameAlias" column="username_alias" />
+		<result property="orgId" column="org_id" />
+		<result property="departmentId" column="department_id" />
+		<result property="postId" column="post_id" />
+		<result property="postId" column="post_id" />
+		<result property="email" column="email" />
+		<result property="createUser" column="create_user" />
+		<result property="userStatus" column="user_status" />
+	</resultMap> -->
+	
+	<select id="getSTaskCountByName" resultType="int" parameterType="string">
+		select
+			count(1)
+		from e_task_relation
+		where s_task_name = #{taskName}
+	</select>
+	
+	
+	<select id="getJobCountTaskId" resultType="int" parameterType="int">
+		SELECT 
+			count(1)
+		FROM e_job a
+		WHERE a.task_id = #{taskId}
+	</select>
+	
+	
+	
+	
+	
+	<!-- <select id="getUserInfoByUserName" resultMap="loginUserInfoMap" parameterType="String">
+		select * from e_sys_user where username=#{username}
+	</select>
+	
+	<select id="getAllLoginUserInfo" resultMap="loginUserInfoMap" >
+		select * from e_sys_user
+	</select> -->
+	
+	<select id="getAllDateparams" resultMap="dateparamsMap" >
+		SELECT * FROM e_base_dateparams
+	</select>
+	
+
+	<select id="getArgumentByFunctionID" resultMap="selfProgramArgumentMap" parameterType="int">
+		SELECT * FROM e_function_param where e_function_param.function_id= #{functionId} order by e_function_param.param_index
+	</select>
+
+	<resultMap type="MapreduceJar" id="mapreduceJarMap">
+		<id property="jarId" column="jar_id" />
+		<result property="jarName" column="jar_name" />
+		<result property="jarPath" column="jar_path" />
+		<result property="jarType" column="jar_type" />
+		<result property="userId" column="user_id" />
+		<result property="uploadDate" column="upload_date" />
+	</resultMap>
+
+	<select id="getMapreduceJarByJarID" resultMap="mapreduceJarMap" parameterType="int">
+		SELECT * FROM e_mapreduce_jar where e_mapreduce_jar.jar_id= #{jarId}
+	</select>
+
+	<!-- <resultMap type="ModelProgramArgument" id="modelArgumentMap">
+		<id property="paramId" column="param_id" />
+		<result property="name" column="param_name" />
+		<result property="paramType" column="param_type" />
+		<result property="paramDesc" column="param_desc" />
+		<result property="paraNumber" column="param_nums" />
+		<result property="paramType" column="param_type" />
+		<result property="modelId" column="model_id" />
+	</resultMap>
+
+	<select id="getArgumentByModelID" resultMap="modelArgumentMap" parameterType="int">
+		SELECT * FROM e_model_param where e_model_param.model_id= #{modelId} order by e_model_param.param_index
+	</select> -->
+	
+	<resultMap type="cn.vigor.modules.compute.bean.TaskType" id="taskTypeMap">
+		<id property="id" column="task_type_id" />
+		<result property="name" column="task_type_name" />
+	</resultMap>
+
+	<resultMap type="ComputeTask" id="taskMap">
+		<id property="taskId" column="task_id" />
+		<result property="taskName" column="task_name" />
+		<result property="taskType" column="task_type" />
+		<result property="groupId" column="group_id" />
+		<result property="typeName" column="type_name" />
+		<result property="taskDesc" column="task_desc" />
+		<result property="createUser" column="create_user" />
+		<result property="comeFrom" column="come_from" />
+		<result property="xmlData" column="xml_data" />
+		<result property="functionName" column="function_name" />
+		<result property="createTime" column="create_time" jdbcType="TIMESTAMP" />
+		<!-- <result property="algorithmType" column="algorithm_type" /> -->
+	</resultMap>
+	
+	<select id="getTaskList" resultMap="taskMap" parameterType="inParam">
+		select t.task_id,t.task_name, t.task_desc, t.group_id,t.create_user,t.task_type,ett.type_name,
+		t.xml_data,t.create_time from e_Task t join e_base_task_type ett on t.task_type=ett.type_id
+		where t.task_type not in (1,2,9) 
+		<if test="isAdmin ==false">
+			and t.create_user=#{createUser}
+		</if>
+		 order by t.create_time desc
+	</select>
+	
+	<select id="getTaskById" resultMap="taskMap" parameterType="int">
+		select t.task_id,t.task_name, t.task_desc, t.group_id, t.task_type,t.task_status,t.xml_data from e_Task t 
+		join e_base_task_type ett 
+		where t.task_type not in (1,2) and t.task_id=#{taskId} order by t.create_time desc
+	</select>
+	
+	<select id="getTaskXmlData" resultType="string" parameterType="int">
+		select xml_data from e_task where task_id = #{taskId}
+	</select>
+
+	<resultMap type="cn.vigor.modules.compute.bean.OutputTemplate" id="OutputTemplateMap">
+		<result property="ip" column="node_ip" />
+		<result property="port" column="node_port" />
+		<result property="db" column="node_dir" />
+		<result property="type" column="node_type" />
+		<result property="typeText" column="platform_name" />
+		<result property="username" column="node_user" />
+		<result property="password" column="node_password" />
+	</resultMap>
+
+	<resultMap type="cn.vigor.modules.compute.bean.OutputTemplate" id="OutputTemplateFlumeMap">
+		<result property="id" column="store_id" />
+		<result property="ip" column="store_ip" />
+		<result property="port" column="store_port" />
+		<result property="db" column="store_dir" />
+		<result property="type" column="store_type" />
+		<result property="typeText" column="store_name" />
+		<result property="username" column="store_user" />
+		<result property="password" column="store_password" />
+	</resultMap>
+
+	<resultMap id="ftpServerMap" type="cn.vigor.modules.compute.bean.FTP4MR">
+		<result property="ip" column="node_ip" />
+		<result property="port" column="node_port" />
+		<result property="user" column="node_user" />
+		<result property="passWord" column="node_password" />
+	</resultMap>
+
+	<select id="getSources" resultMap="sourceMap">
+		select
+		ti.store_name,ti.store_desc,ti.store_dir,ti.store_file,ti.store_id,
+		ti.store_ip,ti.store_port,ti.store_type,
+		tdp.pro_index,tdp.pro_name,tdp.pro_type,tdp.pro_desc,tdp.pro_id,st.type_name
+		from e_meta_store ti
+		left outer join e_meta_store_pro tdp on
+		tdp.store_id = ti.store_id
+		join e_base_store_type st on
+		st.type_id=ti.store_type
+		order by ti.store_id desc,tdp.pro_index asc
+	</select>
+	
+	<select id="getMongoSources" resultMap="mongoSourceMap">
+		select
+		ti.source_name,ti.source_desc,ti.source_dir,ti.source_file,ti.source_id,
+		ti.source_ip,ti.source_port,ti.source_type,
+		tdp.pro_index,tdp.pro_name,tdp.pro_type,tdp.pro_desc,tdp.pro_id,st.type_name
+
+		from e_meta_source ti
+		left outer join e_meta_source_pro tdp on
+		tdp.source_id = ti.source_id
+		join e_base_source_type st on
+		st.type_id=ti.source_type
+		where ti.source_type ='8'
+	</select>
+	
+	<select id="getSourcesByTypes" resultMap="sourceMap">
+		select
+		ti.store_name,ti.store_desc,ti.store_dir,ti.store_file,ti.store_id,
+		ti.store_ip,ti.store_port,ti.store_type,
+		tdp.pro_index,tdp.pro_name,tdp.pro_type,tdp.data_format,tdp.pro_desc,tdp.pro_id,st.type_name
+		from e_meta_store ti
+		left outer join e_meta_store_pro tdp on
+		tdp.store_id = ti.store_id
+		join e_base_store_type st on
+		st.type_id=ti.store_type
+		where tdp.pro_index > 0 and ti.store_type in
+		<foreach item="item" index="index" collection="array" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+		order by ti.create_time desc
+	</select>
+	<!-- order by ti.store_id desc,tdp.pro_index asc -->
+
+	<select id="getSourcesByTypesWithoutHd" resultMap="sourceMap">
+		select s.*,
+		tdp.pro_index,tdp.pro_name,tdp.pro_type,tdp.pro_desc,tdp.pro_id,
+		st.type_name from e_meta_store s
+		left outer join e_meta_store_pro tdp
+		on tdp.store_id = s.store_id
+		join e_base_store_type st on
+		st.type_id=s.store_type
+		where s.store_type = 3
+		and s.store_id not in
+		(select ifnull(t.store_union, 0) from
+		e_meta_store t) order by s.create_time desc
+	</select>
+
+	<select id="getETLSources" resultMap="ETLsourceMap">
+		select
+		ti.source_name,ti.source_desc,ti.source_dir,ti.source_file,ti.source_id,
+		ti.source_ip,ti.source_port,ti.source_type,
+		tdp.pro_index,tdp.pro_name,tdp.pro_type,tdp.pro_desc,tdp.pro_id
+		from
+		e_meta_source ti
+		left outer join e_meta_source_pro tdp on tdp.source_id
+		= ti.source_id
+		where ti.source_type = 10
+		order by
+		ti.source_id
+		desc,tdp.pro_index asc
+	</select>
+
+	<resultMap type="Source" id="FlumeETLsourceMap">
+		<id property="id" column="source_id" />
+		<result property="name" column="source_name" />
+		<result property="type" column="source_type" />
+		<result property="desc" column="source_desc" />
+		<result property="ip" column="source_ip" />
+		<result property="port" column="source_port" />
+		<result property="file" column="source_file" />
+		<result property="dir" column="source_dir" />
+		<collection property="fields" ofType="SourceField">
+			<id property="id" column="pro_id" />
+			<result property="sourceId" column="source_id" />
+			<result property="index" column="pro_index" />
+			<result property="name" column="pro_name" />
+			<result property="type" column="pro_type" />
+			<result property="desc" column="pro_desc" />
+		</collection>
+	</resultMap>
+
+	<select id="getTaskId" resultType="int" parameterType="output">
+		SELECT
+		task_id FROM e_task where task_type = #{taskType} AND function_id =
+		#{functionId}
+	</select>
+
+	<!-- ,tdp.pro_index -->
+	<select id="getFlumeETLSources" resultMap="FlumeETLsourceMap">
+		select
+		ti.source_name,ti.source_desc,ti.source_dir,ti.source_file,ti.source_id,
+		ti.source_ip,ti.source_port,ti.source_type,
+		tdp.pro_index,tdp.pro_name,tdp.pro_type,tdp.pro_desc,tdp.pro_id
+		from e_meta_source ti left outer join e_meta_source_pro tdp on tdp.source_id = ti.source_id
+		where ti.source_type in(9,10)
+		order by
+		ti.source_type ASC
+	</select>
+
+
+	<select id="getFunctions" resultMap="functionMap">
+		SELECT
+		function_id,
+		function_name,
+		function_desc,
+		function_class,
+		jar_id,
+		rule_type,
+		rule_expression,
+		return_type,
+		username,
+		password,
+		ip,
+		port,
+		dbname,
+		dbtype,
+		ft.type_name as
+		function_type
+		FROM
+		e_function f join e_base_function_type ft on
+		f.function_type = ft.type_id
+	</select>
+	
+	<select id="getFunctionParams" resultMap="functionParamMap" parameterType="int">
+		SELECT
+		param_id,
+		param_name,
+		param_index,
+		param_select,
+		param_type,
+		param_desc 
+		FROM
+		e_function_param where function_id=#{functionId}
+	</select>
+
+	<!-- <select id="getModels" resultMap="modelMap">
+		SELECT
+		model_id,
+		model_name,
+		model_desc,
+		model_class,
+		jar_id,
+		rule_type,
+		rule_expression,
+		return_type,
+		model_type
+		FROM
+		e_model f
+	</select> -->
+
+	<select id="getFunctionsByType" resultMap="functionMap" parameterType="int">
+		SELECT
+		function_id,
+		function_name,
+		function_desc,
+		function_class,
+		jar_id,
+		param_nums,
+		param_type,
+		expansion_field,
+		return_type,
+		ft.type_name as
+		function_type
+		FROM
+		e_function f join e_base_function_type ft on
+		f.function_type =
+		ft.type_id
+		where
+		f.function_type = #{type} order by
+		function_name
+	</select>
+	
+	<select id="getFunctionsByTypeWithParams" resultMap="functionMap" parameterType="inParam">
+		SELECT distinct
+		function_id,
+		function_name,
+		function_desc,
+		function_class,
+		function_status,
+		jar_id,
+		param_nums,
+		param_type,
+		expansion_field,
+		return_type,
+		ft.type_name as
+		function_type
+		FROM e_function f join e_base_function_type ft on f.function_type = ft.type_id
+		<if test="isAdmin ==false">
+		     JOIN e_data_permission tp ON tp.data_id=f.function_id  
+		</if>	
+		where  f.function_type = #{functionType}
+		<if test="isAdmin ==false">
+			and ((tp.data_type='function' and tp.query='Y' and tp.user_id=#{userid}) or f.function_status = 1)
+		</if>
+		 order by function_name
+	</select>
+
+	<select id="getOutputs" resultMap="outputMap">
+		select r.result_id,
+		r.result_name, r.result_type, r.result_desc,
+		r.result_ip,
+		r.result_port, r.result_dir, r.result_file,
+		rp.pro_id,
+		rp.pro_index,
+		rp.pro_name,
+		rp.pro_desc,
+		rp.pro_type
+		from e_meta_result r
+		left outer join
+		e_meta_result_pro rp on r.result_id =
+		rp.result_id
+		order by
+		r.result_id,rp.pro_index asc
+	</select>
+
+	<insert id="insertMetaResult" parameterType="output"
+		useGeneratedKeys="true" keyProperty="id" keyColumn="result_id">
+		INSERT INTO
+		e_meta_result
+		(
+		repo_id,
+		result_name,
+		result_desc,
+		delimiter,
+		result_file,
+		result_type,
+		create_user
+		)
+		VALUE (
+		#{repoId},
+		#{name},
+		#{desc},
+		#{delimiter},
+		#{file},
+		#{type},
+		#{createUser}
+		)
+	</insert>
+
+	<select id="getETLMetaStoreSameFile" parameterType="output"
+		resultType="int">
+		select count(1) from e_meta_store m
+		where store_file = #{file} and store_type = #{type}
+	</select>
+	
+	<!-- join e_task_output ou on m.store_id
+		= ou.output_id
+		<if test="taskId != 0">
+			and ou.task_id != #{taskId}
+		</if>
+	-->
+	
+	<select id="getETLMetaStoreSameName" parameterType="output"
+		resultType="int">
+		select count(1) from e_meta_store m
+		where store_name = #{name} and store_type = #{type}
+	</select>
+
+	<select id="getMetaResultFileSameName" parameterType="output"
+		resultType="int">
+		select count(1) from e_meta_result m
+		join e_task_output ou on
+		m.id = ou.output_id
+		where result_file = #{file} and result_type
+		= #{resultType}
+		<if test="taskId != 0">
+			and ou.task_id != #{taskId}
+		</if>
+	</select>
+	
+	<select id="getMetaResultSameName" parameterType="output" resultType="int">
+		select count(1) from e_meta_result m
+		join e_task_output ou on
+		m.id = ou.output_id
+		where result_name = #{name} and result_type
+		= #{resultType}
+		<if test="taskId != 0">
+			and ou.task_id != #{taskId}
+		</if>
+	</select>
+	
+	<select id="getMetaResultSameNameCount" parameterType="output"
+		resultType="int">
+		select count(1) from e_meta_result m
+		join e_task_output ou on
+		m.id = ou.output_id
+		where result_name = #{name} and result_type
+		= #{resultType}
+	</select>
+
+	<select id="getMetaResultSameNameWithoutType" parameterType="output"
+		resultType="int">
+		select count(1) from e_meta_result m
+		join e_task_output ou on
+		m.id = ou.output_id
+		where result_name = #{name} 
+		<if test="taskId != 0">
+			and ou.task_id != #{taskId}
+		</if>
+	</select>
+
+	<select id="getFtpSever" resultMap="ftpServerMap">
+		select
+		node_ip,node_port,node_user,node_password,node_dir
+		from e_platform tp join e_platform_node tpn on
+		tp.platform_id=tpn.platform_id
+		where tp.platform_name='ftp'
+		order by rand() limit 1
+	</select>
+
+	<insert id="insertMetaStore" parameterType="output"
+		useGeneratedKeys="true" keyProperty="id" keyColumn="store_id">
+		INSERT INTO
+		e_meta_store
+		(
+		store_type,
+		store_name,
+		store_desc,
+		delimiter,
+		store_ip,
+		store_port,
+		store_dir,
+		store_user,
+		store_password,
+		store_file,
+		create_time
+		)
+		VALUE (
+		#{type},
+		#{name},
+		#{desc},
+		#{delimiter},
+		#{ip},
+		#{port},
+		#{dir},
+		#{username},
+		#{password},
+		#{file},
+		now()
+		)
+	</insert>
+
+	<insert id="insertMetaStoreFromOutputTemplate" parameterType="outputTemplate"
+		useGeneratedKeys="true" keyProperty="id" keyColumn="store_id">
+		INSERT INTO
+		e_meta_store
+		(
+		store_type,
+		store_name,
+		store_desc,
+		delimiter,
+		store_ip,
+		store_port,
+		store_dir,
+		store_user,
+		store_password,
+		store_file
+		)
+		VALUE (
+		9,
+		#{name},
+		#{desc},
+		#{delimiter},
+		#{ip},
+		#{port},
+		#{dir},
+		#{username},
+		#{password},
+		#{file}
+		)
+	</insert>
+
+	<insert id="insertMetaResultPro" parameterType="outputField">
+		INSERT INTO
+		e_meta_result_pro
+		(
+		result_id,
+		pro_index,
+		pro_name,
+		pro_type,
+		pro_desc
+		)
+		VALUE (
+		#{resultId},
+		#{index},
+		#{name},
+		#{type},
+		#{desc}
+		)
+	</insert>
+
+	<insert id="insertMetaStorePro" parameterType="outputField">
+		INSERT INTO
+		e_meta_store_pro
+		(
+		store_id,
+		pro_index,
+		pro_name,
+		pro_type,
+		pro_desc
+		)
+		VALUE (
+		#{storeId},
+		#{index},
+		#{name},
+		#{type},
+		#{desc}
+		)
+	</insert>
+
+	<select id="getTaskTypes" resultMap="taskTypeMap">
+		select type_id as
+		task_type_id, type_name as task_type_name from e_base_task_type
+	</select>
+
+	<insert id="insertTask" parameterType="cn.vigor.modules.compute.bean.Output" useGeneratedKeys="true"
+		keyColumn="task_id" keyProperty="taskId">
+		INSERT INTO
+		e_task
+		(
+		<if test="taskId != 0">
+			task_id,
+		</if>
+		task_name,
+		task_type,
+		group_id,
+		task_desc,
+		create_user,
+		come_from,
+		create_time,
+		xml_data
+		)
+		VALUE (
+		<if test="taskId != 0">
+			#{taskId},
+		</if>
+		#{taskName},
+		#{taskType},
+		#{groupId},
+		#{taskDesc},
+		#{createUser},
+		#{comeFrom},
+		now(),
+		#{xmlString2}
+		)
+	</insert>
+
+	<insert id="insertTaskOutput" parameterType="cn.vigor.modules.compute.bean.Output">
+		INSERT INTO
+		e_task_output
+		(
+		output_id,
+		task_id,
+		output_type
+		)
+		VALUE (
+		#{outputId},
+		#{taskId},
+		#{outputType}
+		)
+	</insert>
+
+	<insert id="insertETLTaskInput" parameterType="cn.vigor.modules.compute.bean.Output">
+		INSERT INTO
+		e_task_input
+		(
+		input_id,
+		task_id,
+		input_type
+		)
+		VALUE (
+		#{sourceId},
+		#{taskId},
+		#{inputType}
+		)
+	</insert>
+
+	<insert id="insertTaskInput" parameterType="cn.vigor.modules.compute.bean.Output">
+		INSERT INTO
+		e_task_input
+		(
+		input_id,
+		task_id,
+		input_type
+		)
+		VALUE (
+		#{storeId},
+		#{taskId},
+		#{inputType}
+		)
+	</insert>
+
+	<insert id="insertTaskPro" parameterType="cn.vigor.modules.compute.bean.Output">
+		INSERT INTO
+		e_task_data_pro
+		(
+		task_id,
+		property
+		)
+		VALUE (
+		#{taskId},
+		#{xmlString2}
+		)
+	</insert>
+
+	<select id="getOutputTemplates" resultMap="OutputTemplateMap">
+		select
+		node_ip,node_port,node_dir,node_type,platform_name,node_user,node_password
+		from `e_platform_node` t
+		left join e_platform p on
+		t.platform_id =
+		p.platform_id
+	</select>
+
+	<select id="getOutputTemplatesByTypes" resultMap="OutputTemplateMap">
+		select
+		node_ip,node_port,node_dir,node_type,platform_name,node_user,node_password
+		from `e_platform_node` t
+		left join e_platform p on
+		t.platform_id =
+		p.id
+		where t.platform_id in
+		<foreach item="item" index="index" collection="array" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+
+	</select>
+
+	<select id="getOutputTemplatesByTypesName" resultMap="OutputTemplateMap">
+		select
+		node_ip,node_port,node_dir,node_type,platform_name,node_user,node_password
+		from `e_platform_node` t
+		left join e_platform p on
+		t.platform_id =
+		p.id
+		where p.platform_name in
+		<foreach item="item" index="index" collection="array" open="("
+			separator="," close=")">
+			#{item}
+		</foreach>
+
+	</select>
+
+	<select id="getHDFSOutputTemplates" resultMap="OutputTemplateMap">
+		select
+		node_ip,node_port,node_dir,node_type,platform_name,node_user,node_password
+		from `e_platform_node` t
+		left join e_platform p on
+		t.platform_id =
+		p.id
+		where p.platform_name ='hadoop_hdfs' and t.node_type=1
+		limit 1
+	</select>
+
+	<select id="getHADOOPHIVEOutputTemplates" resultMap="OutputTemplateMap">
+		select
+		node_ip,node_port,node_dir,node_type,platform_name,node_user,node_password
+		from `e_platform_node` t
+		left join e_platform p on
+		t.platform_id =
+		p.id
+		where p.platform_name ='hadoop_hive' and t.node_type=1
+		limit 1
+	</select>
+
+	<select id="getEtlOutputTemplates" resultMap="OutputTemplateMap">
+		select
+		group_concat(node_ip order by node_ip separator ",") as
+		node_ip,node_port,node_dir,node_type,platform_name,node_user,node_password
+		from(
+		select
+		concat(node_ip, ':', 9092) as
+		node_ip,node_port,node_dir,node_type,platform_name,t.platform_id,node_user,node_password
+		from `e_platform_node` t
+		left join e_platform p on
+		t.platform_id =
+		p.platform_id
+		where p.platform_name='kafka_cluster'
+		) a group by
+		node_port,node_dir,node_type,platform_name,node_user,node_password
+		limit 1
+	</select>
+
+	<select id="getFlumeEtlOutputTemplatesNew" resultMap="OutputTemplateFlumeMap">
+				select * FROM e_meta_store as ts
+		where ts.store_type in(3,9) and date(ts.create_time)=curdate() 
+		and ts.store_id not in (select tto.output_id from e_task_output tto where tto.output_type=1) 
+	</select>
+	
+	<select id="getFlumeEtlOutputTemplatesUpdate" resultMap="OutputTemplateFlumeMap">
+				select * FROM e_meta_store as ts
+		where ts.store_type in(3,9) and date(ts.create_time)=curdate()
+	</select>
+	
+	<select id="getTaskSameName" parameterType="String" resultType="int">
+		select count(1) from e_task  where task_name = #{task_name} 
+	</select>
+	
+	<delete id="deleteMetaStore" parameterType="int">
+		delete from
+		e_meta_store where store_id = #{id}
+	</delete>
+
+	<delete id="deleteMetaStorePro" parameterType="int">
+		delete from
+		e_meta_store_pro where store_id = #{id}
+	</delete>
+
+	<delete id="deleteMetaResult" parameterType="int">
+		delete from
+		e_meta_result where result_id = #{id}
+	</delete>
+
+	<delete id="deleteMetaResultPro" parameterType="int">
+		delete from e_meta_result_pro where result_id = #{id}
+	</delete>
+
+	<delete id="deleteTask" parameterType="int">
+		delete from e_task where task_id = #{taskId}
+	</delete>
+
+	<delete id="deleteTaskInput" parameterType="int">
+		delete from
+		e_task_input where task_id = #{taskId}
+	</delete>
+
+	<delete id="deleteTaskOutput" parameterType="int">
+		delete from
+		e_task_output where task_id = #{taskId}
+	</delete>
+
+	<delete id="deleteTaskPro" parameterType="int">
+		delete from
+		e_task_data_pro where task_id = #{taskId}
+	</delete>
+	
+	<resultMap type="ComputeTaskGroup" id="groupMap">
+		<id property="groupId" column="group_id" />
+		<result property="groupName" column="group_name" />
+		<result property="groupType" column="group_type" />
+		<result property="createUser" column="create_user" />
+		<result property="createTime" column="create_time" />
+	</resultMap>
+	
+	<select id="getTaskGroup" resultMap="groupMap" parameterType="int">
+		SELECT * FROM e_task_group where group_type=2
+	</select>
+	
+</mapper>
+
+<!-- insert into e_function values(77,'cy_in',10,'','','',1,'',1,'','','root','123456','192.168.7.175',22,'',''); -->

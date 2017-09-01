@@ -1,0 +1,238 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.vigor.modules.dataservice.dao.EServiceInfoDao">
+     
+    <resultMap id="eServiceInfoMeta" type="cn.vigor.modules.dataservice.entity.EServiceInfoMeta">
+    	<result column="metaId" property="metaId" />
+    	<result column="metaName" property="metaName" />
+    	<result column="metaDesc" property="metaDesc" />
+    	<result column="metaFile" property="metaFile" />
+    	<result column="metaType" property="metaType" />
+    	<!-- <association property="storeProList" column="metaId" select="selectStoreProListByMetaId" />
+    	<association property="resultProList" column="metaId" select="selectResultProListByMetaId" /> -->
+    </resultMap>
+    <resultMap id="metaPro" type="cn.vigor.modules.dataservice.entity.EServicePro">
+    	<result column="id" property="id" />
+    	<result column="pro_name" property="proName" />
+    	<result column="pro_type" property="proType" />
+    	<result column="pro_desc" property="proDesc" />
+    </resultMap>
+    <sql id="metaProColumns">
+    	id, pro_name, pro_type, pro_desc
+    </sql>
+    <select id="selectStoreProListByMetaId" parameterType="int" resultMap="metaPro">
+    	select 
+    		a.id, 
+    		concat(	case b.store_type 
+    					when 4 then (case a.pro_name 
+    						when 'id' then '' 
+    						else concat(substring_index(b.store_external, ',', 1), '.') 
+    					end) 
+    					else '' 
+    				end, a.pro_name) pro_name, 
+    		a.pro_type, a.pro_desc  
+    	from e_meta_store_pro a 
+    	join e_meta_store b 
+    	on b.id = a.store_id  
+    	where a.store_id = #{metaId} 
+    	order by a.pro_index 
+    </select>
+	
+	<select id="selectResultProListByMetaId" parameterType="int" resultMap="metaPro">
+		select <include refid="metaProColumns" /> 
+    	from e_meta_result_pro 
+    	where result_id = #{metaId}
+    	order by pro_index 
+    </select>
+	
+	<sql id="eServiceInfoColumns">
+		a.service_id AS "serviceId",
+		a.service_name AS "serviceName",
+		a.service_type AS "serviceType",
+		a.service_desc AS "serviceDesc",
+		a.from_type AS "fromType",
+		a.data_id AS "dataId",
+		a.data_type AS "dataType"
+	</sql>
+	
+	<sql id="eServiceInfoJoins">
+	</sql>
+	
+    
+	<select id="get" resultType="EServiceInfo" >
+		SELECT 
+			<include refid="eServiceInfoColumns"/>
+		FROM e_service_info a
+		<include refid="eServiceInfoJoins"/>
+		WHERE a.service_id = #{serviceId}
+	</select>
+	
+	<select id="getMetaStoreList" resultMap="eServiceInfoMeta">
+		select 
+			A.id AS "metaId", 
+			A.store_name AS "metaName", 
+			A.store_desc AS "metaDesc", 
+			A.store_file AS "metaFile", 
+			A.store_type AS "metaType" 
+		from e_meta_store A 
+		where A.store_type != 3 
+		and A.store_enable = 1;
+	</select>
+	<select id="getMetaResultList" resultMap="eServiceInfoMeta">
+		select 
+			A.id AS "metaId", 
+			A.result_name AS "metaName", 
+			A.result_desc AS "metaDesc", 
+			A.result_file AS "metaFile", 
+			A.result_type AS "metaType" 
+		from e_meta_result A 
+		where A.result_type != 3 
+		and A.result_enable = 1;
+	</select>
+	
+	<select id="getFunctionListByTypes" resultType="EServiceFunction">
+		select 
+			function_id AS "func.id", 
+			function_name AS "func.functionName", 
+			function_type AS "func.functionType", 
+			function_desc AS "func.functionDesc" 
+		from e_function 
+		where function_type in (
+		<foreach item="type" collection="list" separator=",">
+		#{type}
+		</foreach>
+		) 
+		order by function_type, function_id
+	</select>
+	
+	<select id="getRealTimeServiceList" resultType="PartnerServ">
+	select 
+		service_id AS "service.serviceId", 
+		service_name AS "service.serviceName", 
+		service_type AS "service.serviceType", 
+		service_desc AS "service.serviceDesc" 
+	from e_service_info a 
+	where a.service_type = 1 
+	order by a.modify_time desc
+	</select>
+	
+	<select id="getAllServiceList" resultType="PartnerServ">
+	select 
+		service_id AS "service.serviceId", 
+		service_name AS "service.serviceName", 
+		service_type AS "service.serviceType", 
+		service_desc AS "service.serviceDesc" 
+	from e_service_info a 
+	order by a.modify_time desc
+	</select>
+	
+	<select id="getServiceListByPartnerType" parameterType="int" resultType="EServiceInfo">
+	select <include refid="eServiceInfoColumns" />
+	from e_service_info a 
+	</select>
+	
+	<select id="findList" resultType="EServiceInfo" >
+		SELECT 
+			<include refid="eServiceInfoColumns"/>
+		FROM e_service_info a
+		<include refid="eServiceInfoJoins"/>
+		<where>
+			
+			<if test="serviceName != null and serviceName != ''">
+				AND a.service_name LIKE 
+					<if test="dbName == 'oracle'">'%'||#{serviceName}||'%'</if>
+					<if test="dbName == 'mssql'">'%'+#{serviceName}+'%'</if>
+					<if test="dbName == 'mysql'">concat('%',#{serviceName},'%')</if>
+			</if>
+			<if test="serviceType != null and serviceType != ''">
+				AND a.service_type = #{serviceType}
+			</if>
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				order by a.modify_time desc 
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="findAllList" resultType="EServiceInfo" >
+		SELECT 
+			<include refid="eServiceInfoColumns"/>
+		FROM e_service_info a
+		<include refid="eServiceInfoJoins"/>
+		<where>
+			
+		</where>		
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy} desc 
+			</when>
+			<otherwise>
+				order by modify_time desc
+			</otherwise>
+		</choose>
+	</select>
+	
+	<insert id="insert" useGeneratedKeys="true" keyColumn="service_id" keyProperty="serviceId" parameterType="EServiceInfo">
+		INSERT INTO e_service_info(
+			service_name,
+			service_type,
+			service_desc,
+			from_type,
+			data_id,
+			data_type, 
+			create_time, 
+			create_user, 
+			modify_time, 
+			modify_user 
+		) VALUES (
+			#{serviceName},
+			#{serviceType},
+			#{serviceDesc},
+			#{fromType},
+			#{dataId},
+			#{dataType}, 
+			now(), 
+			#{createBy.name}, 
+			now(), 
+			#{createBy.name} 
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE e_service_info SET 
+			service_name = #{serviceName},
+			service_type = #{serviceType},
+			service_desc = #{serviceDesc},
+			from_type = #{fromType},
+			data_id = #{dataId},
+			data_type = #{dataType}, 
+			modify_user = #{updateBy.name}, 
+			modify_time = now() 
+		WHERE service_id = #{serviceId} 
+	</update>
+	
+	
+	<!--物理删除-->
+	<update id="delete">
+		DELETE FROM e_service_info
+		WHERE service_id = #{serviceId}
+	</update>
+	
+	<!--逻辑删除-->
+	<update id="deleteByLogic">
+		UPDATE e_service_info SET 
+			del_flag = #{DEL_FLAG_DELETE}
+		WHERE service_id = #{serviceId}
+	</update>
+
+	
+	<!-- 根据实体名称和字段名称和字段值获取唯一记录 -->
+	<select id="findUniqueByProperty" resultType="EServiceInfo" statementType="STATEMENT">
+		select * FROM e_service_info  where ${propertyName} = '${value}'
+	</select>
+	
+</mapper>

@@ -1,0 +1,170 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.vigor.modules.meta.dao.MetaSourceProDao">
+    
+	<sql id="metaSourceProColumns">
+		a.id AS "id",
+		a.source_id AS "sourceId",
+		a.pro_name AS "proName",
+		a.pro_index AS "proIndex",
+		a.pro_type AS "proType",
+		a.data_format AS "dataFormat",
+		a.pro_desc AS "remarks",
+		a.create_by AS "createBy.name",
+		a.create_date AS "createDate",
+		a.update_by AS "updateBy.name",
+		a.update_date AS "updateDate",
+		a.del_flag AS "delFlag",
+		a.pro_external AS "proExternal",
+		a.column_size AS "columnSize",
+		a.type AS "type"
+	</sql>
+	
+	<sql id="metaSourceProJoins">
+		LEFT JOIN e_meta_source b ON b.id = a.source_id
+	</sql>
+    
+	<select id="get" resultType="MetaSourcePro">
+		SELECT 
+			<include refid="metaSourceProColumns"/>
+		FROM e_meta_source_pro a
+		<include refid="metaSourceProJoins"/>
+		WHERE a.id = #{id}
+	</select>
+	
+	<select id="findList" resultType="MetaSourcePro">
+		SELECT 
+			<include refid="metaSourceProColumns"/>
+		FROM e_meta_source_pro a
+		<include refid="metaSourceProJoins"/>
+		<where>
+			a.del_flag = #{DEL_FLAG_NORMAL}
+			<if test="sourceId != null and sourceId != ''">
+				AND a.source_id = #{sourceId.id}
+			</if>
+			<if test="proName != null and proName != ''">
+				AND a.pro_name = #{proName}
+			</if>
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY a.pro_index ASC
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="findAllList" resultType="MetaSourcePro">
+		SELECT 
+			<include refid="metaSourceProColumns"/>
+		FROM e_meta_source_pro a
+		<include refid="metaSourceProJoins"/>
+		<where>
+			a.del_flag = #{DEL_FLAG_NORMAL}
+		</where>		
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY a.pro_index ASC
+			</otherwise>
+		</choose>
+	</select>
+	
+	<insert id="insert">
+		INSERT INTO e_meta_source_pro(
+			<!-- id, -->
+			source_id,
+			pro_name,
+			pro_index,
+			pro_type,
+			data_format,
+			pro_desc,
+			create_by,
+			create_date,
+			update_by,
+			update_date,
+			del_flag,
+			pro_external,
+			column_size,
+			type
+		) VALUES (
+			<!-- #{id}, -->
+			#{sourceId.id},
+			#{proName},
+			#{proIndex},
+			#{proType},
+			#{dataFormat},
+			#{remarks},
+			#{createBy.name},
+			#{createDate},
+			#{updateBy.name},
+			#{updateDate},
+			#{delFlag},
+			#{proExternal},
+			#{columnSize},
+			#{type}
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE e_meta_source_pro SET 	
+		<!-- 	source_id = #{sourceId.id}, -->
+			pro_name = #{proName},
+			pro_index = #{proIndex},
+			pro_type = #{proType},
+			data_format = #{dataFormat},
+			pro_desc = #{remarks},
+			update_by = #{updateBy.name},
+			update_date = #{updateDate},
+			pro_external = #{proExternal},
+			column_size = #{columnSize},
+			type = #{type}
+		WHERE id = #{id}
+	</update>
+	
+	
+	<!--物理删除-->
+	<update id="delete">
+		DELETE FROM e_meta_source_pro
+		<choose>
+			<when test="id !=null and id != ''">
+				WHERE id = #{id}
+			</when>
+			<otherwise>
+				WHERE source_id = #{sourceId.id}
+			</otherwise>
+		</choose>
+	</update>
+	
+	<!--逻辑删除-->
+	<update id="deleteByLogic">
+		UPDATE e_meta_source_pro SET 
+			del_flag = #{DEL_FLAG_DELETE}
+		<choose>
+			<when test="id !=null and id != ''">
+				WHERE id = #{id}
+			</when>
+			<otherwise>
+				WHERE source_id = #{sourceId.id}
+			</otherwise>
+		</choose>
+	</update>
+	
+	
+	<!-- 根据实体名称和字段名称和字段值获取唯一记录 -->
+	<select id="findUniqueByProperty" resultType="MetaSourcePro" statementType="STATEMENT">
+		select * FROM e_meta_source_pro  where ${propertyName} = '${value}'
+	</select>
+	
+	<!-- 根据sourceId查询对应的所有属性 -->
+	<select id="findSourceProBySourceId" resultType="MetaSourcePro">
+		select 
+		<include refid="metaSourceProColumns"/>
+		from e_meta_source_pro a
+	    where source_id = #{sourceId}
+	</select>
+</mapper>

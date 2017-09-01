@@ -1,0 +1,588 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.vigor.modules.meta.dao.MetaStoreDao">
+    
+	<sql id="metaStoreColumns">
+		a.id AS "id",
+		a.repo_id AS "repoId.id",
+		b.repo_name AS "repoId.repoName",
+		b.conn_name AS "repoId.connName",
+		a.store_name AS "storeName",
+		a.store_type AS "storeType",
+		a.delimiter AS "delimiter",
+		a.store_desc AS "storeDesc",
+		a.store_file AS "storeFile",
+		a.store_way AS "storeWay",
+		a.hdfs_info AS "hdfsInfo",
+		a.store_external AS "storeExternal",
+		a.create_time AS "createDate",
+		a.create_user AS "createBy.name",
+		a.update_time AS "updateDate",
+		a.store_enable AS "enable",
+		IFNULL(tp.`share`,"N") as "share",
+		a.del_flag AS "delFlag"
+	</sql>
+	
+	
+	<sql id="admin_metaStoreColumns">
+		a.id AS "id",
+		a.repo_id AS "repoId.id",
+		b.repo_name AS "repoId.repoName",
+		b.conn_name AS "repoId.connName",
+		a.store_name AS "storeName",
+		a.store_type AS "storeType",
+		a.delimiter AS "delimiter",
+		a.store_desc AS "storeDesc",
+		a.store_file AS "storeFile",
+		a.store_way AS "storeWay",
+		a.hdfs_info AS "hdfsInfo",
+		a.store_external AS "storeExternal",
+		a.create_time AS "createDate",
+		a.create_user AS "createBy.name",
+		a.update_time AS "updateDate",
+		a.store_enable AS "enable",
+		a.del_flag AS "delFlag"
+	</sql>
+	<sql id="metaStoreJoins">
+			LEFT JOIN e_data_permission as tp ON a.id=tp.data_id AND tp.data_type='store'
+	</sql>
+    <sql id="metaSourceJoinsRepo">
+		LEFT JOIN e_meta_repo as b ON a.repo_id=b.id
+	</sql>
+	
+	 <sql id="metaSourceJoinsRepoWithNo">
+	    JOIN e_meta_repo as b ON a.repo_id=b.id AND b.repo_name not like '%${%' AND a.store_name not like '%${%'
+	    <if test="storeType!=null">
+				and a.store_type=#{storeType} 
+		</if> 
+	</sql>
+	
+	<select id="get" resultType="MetaStore">
+		SELECT DISTINCT
+			<include refid="admin_metaStoreColumns"/>
+		FROM e_meta_store a
+		<include refid="metaSourceJoinsRepo"/>
+		WHERE a.id = #{id}
+	</select>
+	
+	<select id="findList" resultType="MetaStore">
+		SELECT DISTINCT
+		
+			<if test="isAdmin==1">
+				<include refid="admin_metaStoreColumns"/>
+			</if>
+			<if test="isAdmin!=1">
+				<include refid="metaStoreColumns"/>
+			</if> 		
+			
+			
+		FROM e_meta_store a
+		<include refid="metaSourceJoinsRepo"/>
+		<if test="isAdmin!=1">
+			<include refid="metaStoreJoins"/>
+		</if> 	
+		<where>
+			a.del_flag = #{DEL_FLAG_NORMAL}
+			<if test="isAdmin!=1">
+				and ( tp.user_id=#{createBy.id} and tp.`query`='Y')
+			</if> 	
+			<if test="repoId!=null and repoId.id != null and repoId.id != ''">
+				AND a.repo_id = #{repoId.id}
+			</if>
+			<if test="storeName != null and storeName != ''">
+				AND a.store_name like
+				<if test="dbName == 'oracle'">'%'||#{storeName}||'%'</if>
+				<if test="dbName == 'mysql'">CONCAT('%', #{storeName}, '%')</if>
+			</if>
+			<if test="storeFile != null and storeFile != ''">
+				AND a.store_file like
+				<if test="dbName == 'oracle'">'%'||#{storeFile}||'%'</if>
+				<if test="dbName == 'mysql'">CONCAT('%', #{storeFile}, '%')</if>
+			</if>
+			<if test="storeType != 0">
+				AND a.store_type = #{storeType}
+			</if>
+			<if test="vtype != null and vtype == 'vdp'">
+				AND a.store_type in (3,5,11)
+			</if>
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+			ORDER BY  a.update_time desc
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="findAllList" resultType="MetaStore">
+		SELECT DISTINCT
+			<include refid="metaStoreColumns"/>
+		FROM e_meta_store a
+		<include refid="metaSourceJoinsRepo"/>
+		<include refid="metaStoreJoins"/>
+		<where>
+			a.del_flag = #{DEL_FLAG_NORMAL}
+			and 1=#{createBy.id} or ((tp.user_id=#{createBy.id} or tp.office_id=#{createBy.office.id}) and tp.`query`='Y')
+			<if test="vtype != null and vtype == 'vdp'">
+				AND a.store_type in (3,5,11)
+			</if>
+		</where>		
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+			ORDER BY  a.update_time desc
+			</otherwise>
+		</choose>
+	</select>
+	
+	<insert id="insert" useGeneratedKeys="true" keyColumn="id"
+		keyProperty="id" parameterType="MetaStore">
+		INSERT INTO e_meta_store(
+			
+			repo_id,
+			store_name,
+			store_type,
+			delimiter,
+			store_desc,
+			store_file,
+			hdfs_info,
+			store_way,
+			store_external,
+			create_time,
+			create_user,
+			update_time,
+			del_flag
+		) VALUES (
+		
+			#{repoId.id},
+			#{storeName},
+			#{storeType},
+			#{delimiter},
+			#{storeDesc},
+			#{storeFile},
+			#{hdfsInfo},
+			#{storeWay},
+			#{storeExternal},
+			#{createDate},
+			#{createBy.name},
+			#{updateDate},
+			#{delFlag}
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE e_meta_store SET 	
+			repo_id = #{repoId.id},
+			store_name = #{storeName},
+			store_type = #{storeType},
+			delimiter = #{delimiter},
+			store_desc = #{storeDesc},
+			store_file = #{storeFile},
+			hdfs_info = #{hdfsInfo},
+			store_way = #{storeWay},
+			store_external = #{storeExternal},
+			update_time = #{updateDate},
+			del_flag = #{delFlag}
+		WHERE id = #{id}
+	</update>
+	
+	
+	<!--物理删除-->
+	<update id="delete">
+		DELETE FROM e_meta_store
+		<choose>
+			<when test="id !=null and id != ''">
+				WHERE id = #{id}
+			</when>
+			<otherwise>
+				WHERE repo_id = #{repoId.id}
+			</otherwise>
+		</choose>
+	</update>
+	
+	<!--逻辑删除-->
+	<update id="deleteByLogic">
+		UPDATE e_meta_store SET 
+			del_flag = #{DEL_FLAG_DELETE}
+		<choose>
+			<when test="id !=null and id != ''">
+				WHERE id = #{id}
+			</when>
+			<otherwise>
+				WHERE repo_id = #{repoId.id}
+			</otherwise>
+		</choose>
+	</update>
+
+	<!-- 根据实体名称和字段名称和字段值获取唯一记录 -->
+	<select id="findUniqueByProperty" resultType="MetaStore" statementType="STATEMENT">
+		select 
+			a.id AS "id",
+			a.repo_id AS "repoId.id",
+			a.store_name AS "storeName",
+			a.store_type AS "storeType",
+			a.delimiter AS "delimiter",
+			a.store_desc AS "storeDesc",
+			a.store_file AS "storeFile",
+			a.store_way AS "storeWay",
+			a.hdfs_info AS "hdfsInfo",
+			a.store_external AS "storeExternal",
+			a.create_time AS "createDate",
+			a.create_user AS "createBy.name",
+			a.update_time AS "updateDate",
+			a.store_enable AS "enable",
+			a.del_flag AS "delFlag"
+		FROM e_meta_store as a  where ${propertyName} = '${value}'
+	</select>
+	
+	<update id="enable" parameterType="string">
+		UPDATE `e_meta_store` SET `store_enable`=1 WHERE (`id`=#{id})
+	</update>
+	<update id="disable" parameterType="string">
+		UPDATE `e_meta_store` SET `store_enable`=0 WHERE (`id`=#{id})
+	</update>
+	<select id="findEtlFlow" resultType="map" parameterType="String">
+		SELECT 
+			input.task_id AS taskId,
+			t.task_name AS taskName,
+			t.task_type  AS taskType,
+			#j.start_time AS startTime,
+			#j.end_time AS endTime,
+			#j.job_id,
+			IFNULL(su.source_name,stin.store_name) as inputName ,
+			IFNULL(su.source_type,stin.store_type) as inputType,
+			IFNULL(res.result_name,stout.store_name) as outputName,
+			IFNULL(res.result_type,stout.store_type)as outputType,
+			input.input_id as inputId,
+			input.input_type,
+			output.output_id as outputId,
+			output.output_type
+		FROM
+			e_task_input AS input
+			LEFT JOIN e_task_output AS output ON input.task_id=output.task_id
+			LEFT JOIN e_task as t ON t.task_id=input.task_id
+			#LEFT JOIN e_job as j ON t.task_id=j.task_id
+			LEFT JOIN e_meta_source as su ON su.id=input.input_id  AND input.input_type=0
+			LEFT JOIN e_meta_store as stout ON stout.id=output.output_id AND output.output_type=1
+			LEFT JOIN e_meta_store as stin ON stin.id=input.input_id  AND input.input_type=1
+			LEFT JOIN e_meta_result as res ON res.id=output.output_id AND output.output_type=0
+			#input.input_id=550 
+			#(output.output_id=472  AND output.output_type=1) or (input.input_id=472 AND input.input_type=1)
+			#output.output_id=9 AND output.output_type=0
+		WHERE   
+			output.output_id=#{id}  AND output.output_type=1
+	</select>
+	
+	<select id="findCalFlow" resultType="map" parameterType="String">
+		SELECT 
+			input.task_id AS taskId,
+			t.task_name AS taskName,
+			t.task_type  AS taskType,
+			#j.start_time AS startTime,
+			#j.end_time AS endTime,
+			#j.job_id,
+			IFNULL(su.source_name,stin.store_name) as inputName ,
+			IFNULL(su.source_type,stin.store_type) as inputType,
+			IFNULL(res.result_name,stout.store_name) as outputName,
+			IFNULL(res.result_type,stout.store_type)as outputType,
+			input.input_id as inputId,
+			input.input_type,
+			output.output_id as outputId,
+			output.output_type
+		FROM
+			e_task_input AS input
+			LEFT JOIN e_task_output AS output ON input.task_id=output.task_id
+			LEFT JOIN e_task as t ON t.task_id=input.task_id
+			#LEFT JOIN e_job as j ON t.task_id=j.task_id
+			LEFT JOIN e_meta_source as su ON su.id=input.input_id  AND input.input_type=0
+			LEFT JOIN e_meta_store as stout ON stout.id=output.output_id AND output.output_type=1
+			LEFT JOIN e_meta_store as stin ON stin.id=input.input_id  AND input.input_type=1
+			LEFT JOIN e_meta_result as res ON res.id=output.output_id AND output.output_type=0
+			#input.input_id=550 
+			#(output.output_id=472  AND output.output_type=1) or (input.input_id=472 AND input.input_type=1)
+			#output.output_id=9 AND output.output_type=0
+		WHERE   
+			input.input_id=#{id} AND input.input_type=1  
+	</select>
+	
+	<!-- 根据实体名称获取唯一记录 -->
+	<select id="findMetaStoreByName" resultType="MetaStore">
+		SELECT DISTINCT
+			<include refid="admin_metaStoreColumns"/>
+		FROM e_meta_store a
+		<include refid="metaSourceJoinsRepo"/>
+		WHERE a.store_name = #{storeName}
+	</select>
+
+	<select id="findAllMetaStore" resultType="map" parameterType="map">
+		SELECT DISTINCT
+			a.id AS "id",
+			a.store_name AS "storeName",
+			a.store_type AS "storeType",
+			a.store_desc AS "storeDesc",
+			a.store_file AS "storeFile",
+			a.repo_id AS "repoId",
+			b.ip AS "ip",
+			b.repo_name AS "repoName",
+			b.conn_name AS "connName",
+			b.user_name AS "userName",
+			b.user_pwd AS "userPwd",
+			b.port AS "port",
+			a.delimiter AS "delimiter",
+			a.hdfs_info AS "hdfsInfo",
+			a.store_external AS "storeExternal",
+			a.del_flag AS "delFlag"
+		FROM e_meta_store a
+		<include refid="metaSourceJoinsRepoWithNo"/>
+		<include refid="metaStoreJoins"/>
+		<where>
+		    a.store_name not like #{parKey} 
+			and 1=#{createUserId} or ((tp.user_id=#{createUserId}) and tp.`query`='Y') 
+		</where>
+		order by a.update_time desc		
+	</select>
+	
+	<select id="getMetaStoreByType" resultType="map">
+		select ems.id as storeId,ems.store_name as storeName,ems.store_desc as storeDesc,ems.create_user as createUser,
+		ems.store_file as storeFile,ems.hdfs_info as hdfsInfo,ems.delimiter,ems.repo_id as repoId,ems.store_type as storeType,
+		st.type_name as typeName from e_meta_store ems 
+		join e_base_store_type st on st.type_id = ems.store_type
+		<if test="user.id!=1">
+		JOIN e_data_permission as tp ON (ems.id=tp.data_id AND tp.data_type='store') 
+		</if>
+		where ems.repo_id = #{repoId}
+		<if test="user.id!=1">
+			and tp.`query` = 'Y'
+			and tp.user_id = #{user.id}
+		</if>
+		<if test="types != null">
+			and ems.store_type in
+			<foreach collection="types" item="item" separator="," open="(" close=")">
+			#{item}
+			</foreach>
+		</if>
+		GROUP BY ems.store_name
+		order by ems.create_time desc
+	</select>
+	
+	<select id="getByDbInfoAndStoreType" resultType="MetaStore">
+		SELECT DISTINCT
+			<include refid="admin_metaStoreColumns"/>
+		FROM e_meta_store a
+		<include refid="metaSourceJoinsRepo"/>
+		WHERE 1 = 1
+		<if test="storeFile != null and storeFile != ''">
+			and a.store_file = #{storeFile}
+		</if>
+		<if test="ip !=null and ip != ''">
+			and b.ip = #{ip}
+		</if>
+		<if test="storeType != null">
+			and a.store_type = #{storeType}
+		</if>
+		<if test="repoName != null and repoName != ''">
+			and b.repo_name = #{repoName}
+		</if>
+	</select>
+	<select id="findNodes" resultType="map">
+		
+			SELECT 
+					*
+				FROM
+					(
+						SELECT
+							3 AS `value`,
+							links.source AS `name`,
+							links.itype AS category,
+							links.sid,
+						 
+							links.weight AS dtype
+							
+						FROM
+							(
+								SELECT
+									t.task_name AS `name`,
+									s.source_name AS source,
+									s.source_type AS itype,
+									s.id AS sid,
+									i.task_id AS id,
+									1 AS weight
+								FROM
+									e_task AS t
+								LEFT JOIN e_task_input AS i ON t.task_id = i.task_id
+								LEFT JOIN e_task_output AS o ON i.task_id = o.task_id
+								LEFT JOIN e_meta_source AS s ON s.id = i.input_id
+								LEFT JOIN e_meta_store AS os ON os.id = o.output_id
+								WHERE
+									i.input_type = 0
+								AND o.output_type = 1
+								AND s.source_name NOT LIKE "%${%"
+								UNION
+									SELECT
+										t.task_name AS `name`,
+										s.store_name AS source,
+										s.store_type AS itype,
+										s.id AS sid,
+										i.task_id AS id,
+										2 AS weight
+									FROM
+										e_task AS t
+									LEFT JOIN e_task_input AS i ON t.task_id = i.task_id
+									LEFT JOIN e_task_output AS o ON i.task_id = o.task_id
+									LEFT JOIN e_meta_store AS s ON s.id = i.input_id
+									WHERE
+										i.input_type = 1
+									AND o.output_type = 0
+									AND s.store_name NOT LIKE "%${%"
+							) AS links
+						INNER JOIN (
+							SELECT DISTINCT
+								j.task_id
+							FROM
+								e_job AS j
+							LEFT JOIN e_job_instance AS ji ON ji.job_id = j.job_id
+							WHERE
+								ji.exec_code = 2
+						) tasks ON tasks.task_id = links.id
+						UNION
+							SELECT DISTINCT
+								3 AS `value`,
+								links.target AS `name`,
+								links.otype AS category,
+								links.sid,
+							 
+								links.weight AS dtype
+							FROM
+								(
+									SELECT
+										t.task_name AS `name`,
+										os.store_type AS otype,
+										os.store_name AS target,
+										os.id AS sid,
+										i.task_id AS id,
+										2 AS weight
+									FROM
+										e_task AS t
+									LEFT JOIN e_task_input AS i ON t.task_id = i.task_id
+									LEFT JOIN e_task_output AS o ON i.task_id = o.task_id
+									LEFT JOIN e_meta_store AS os ON os.id = o.output_id
+									WHERE
+										i.input_type = 0
+									AND o.output_type = 1
+									AND os.store_name NOT LIKE "%${%"
+									UNION
+										SELECT
+											t.task_name AS `name`,
+											os.result_type AS otype,
+											os.result_name AS target,
+											os.id AS sid,
+											i.task_id AS id,
+											3 AS weight
+										FROM
+											e_task AS t
+										LEFT JOIN e_task_input AS i ON t.task_id = i.task_id
+										LEFT JOIN e_task_output AS o ON i.task_id = o.task_id
+										LEFT JOIN e_meta_result AS os ON os.id = o.output_id
+										WHERE
+											i.input_type = 1
+										AND o.output_type = 0
+										AND os.result_name NOT LIKE "%${%"
+								) AS links
+							INNER JOIN (
+								SELECT DISTINCT
+									j.task_id
+								FROM
+									e_job AS j
+								LEFT JOIN e_job_instance AS ji ON ji.job_id = j.job_id
+								WHERE
+									ji.exec_code = 2
+							) tasks ON tasks.task_id = links.id
+					) nodes
+				ORDER BY
+					nodes.sid ASC
+							
+
+		
+	</select>
+	
+	
+	<select id="findLinks" resultType="map">
+			SELECT  
+				links.id,
+				links.`name`,
+				links.jdesc,
+				links.source,
+				links.ifile,
+				links.ofile,
+				links.target,
+				links.idesc,
+				links.odesc,
+				links.sid,
+				links.oid,
+				links.itype,
+				links.otype
+			 FROM (
+				SELECT
+				t.task_name AS `name`,
+				t.task_desc AS jdesc,
+				s.source_name AS source,
+				os.store_name AS target,
+				s.source_file AS ifile,
+				os.store_file AS ofile,
+				s.source_desc AS idesc,
+				os.store_desc AS odesc,
+				s.id AS sid,
+				os.id AS oid,
+				1 AS itype,
+				2 AS otype,
+				
+				
+				i.task_id AS id,
+				2 AS weight
+				FROM
+				e_task AS t 
+				LEFT JOIN e_task_input AS i ON t.task_id=i.task_id
+				LEFT JOIN e_task_output AS o ON i.task_id=o.task_id
+				LEFT JOIN e_meta_source AS s ON s.id=i.input_id
+				LEFT JOIN e_meta_store AS os ON os.id=o.output_id
+				WHERE i.input_type=0 AND o.output_type=1 AND s.source_name NOT LIKE "%${%"
+				UNION 
+				SELECT
+				t.task_name AS `name`,
+				s.store_name AS source,
+				s.store_file AS ifile,
+				os.result_file AS ofile,
+				os.result_name AS target,
+				os.result_desc AS odesc,
+				s.store_desc AS idesc,
+				t.task_desc AS jdesc,
+				s.id AS sid,
+				os.id AS oid,
+				2 AS itype,
+				3 AS otype,
+				
+				i.task_id AS id,
+				3 AS weight
+				FROM
+				e_task AS t 
+				LEFT JOIN e_task_input AS i ON t.task_id=i.task_id
+				LEFT JOIN e_task_output AS o ON i.task_id=o.task_id
+				LEFT JOIN e_meta_store AS s ON s.id=i.input_id
+				LEFT JOIN e_meta_result AS os ON os.id=o.output_id
+				WHERE i.input_type=1 AND o.output_type=0 
+			) AS links
+			INNER JOIN (
+			 SELECT DISTINCT j.task_id from e_job as j
+			LEFT JOIN e_job_instance AS ji ON ji.job_id=j.job_id
+			 WHERE ji.exec_code=2 
+			) tasks  ON tasks.task_id=links.id
+	</select>
+	
+	<!-- <select id="getStoreExternalByStoreId" resultType="MetaStore" parameterType="String">
+	SELECT * from e_meta_store a  , e_meta_repo e where  a.repo_id=e.id and a.store_external=#{externalId};
+	</select> -->
+</mapper>

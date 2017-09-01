@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.vigor.modules.ketter.dao.RdatabaseDao">
+	<sql id="rdatabaseColumns">
+		a.ID_DATABASE AS "databaseId",
+		a.NAME AS "name",
+		a.ID_DATABASE_TYPE AS "databaseTypeId",
+		a.ID_DATABASE_CONTYPE AS "databaseContypeId",
+		a.HOST_NAME AS "hostName",
+		a.DATABASE_NAME AS "databaseName",
+		a.PORT AS "port",
+		a.USERNAME AS "userName",
+		a.PASSWORD AS "password",
+		a.SERVERNAME AS "serverName",
+		a.DATA_TBS AS "dataTbs",
+		a.INDEX_TBS AS "indexTbs",
+		a.REPO_ID AS "repoId",
+		a.LOGIN_USER_ID AS "loginUserId",
+		a.STORE_ID AS "storeId",
+		a.SOURCE_ID AS "sourceId"
+	</sql>
+	
+	<insert id="insert" useGeneratedKeys="true" keyColumn="ID_DATABASE" keyProperty="databaseId" parameterType="Rdatabase">
+		INSERT INTO r_database(
+			ID_DATABASE,
+			NAME,
+			ID_DATABASE_TYPE,
+			ID_DATABASE_CONTYPE,
+			HOST_NAME,
+			DATABASE_NAME,
+			PORT,
+			USERNAME,
+			PASSWORD,
+			SERVERNAME,
+			DATA_TBS,
+			INDEX_TBS,
+			REPO_ID,
+			LOGIN_USER_ID,
+			STORE_ID,
+			SOURCE_ID
+		) VALUES (
+			#{databaseId},
+			#{name},
+			#{databaseTypeId},
+			#{databaseContypeId},
+			#{hostName},
+			#{databaseName},
+			#{port},
+			#{userName},
+			#{password},
+			#{serverName},
+			#{dataTbs},
+			#{indexTbs},
+			#{repoId},
+			#{loginUserId},
+			#{storeId},
+			#{sourceId}
+		)
+	</insert>
+	
+	<insert id="insertRdatabaseAttr" useGeneratedKeys="true">
+		INSERT INTO r_database_attribute(	
+			ID_DATABASE_ATTRIBUTE,
+			ID_DATABASE,
+			CODE,
+			VALUE_STR
+		) VALUES 
+		<foreach collection="list" item="item" separator=",">
+			(
+				#{item.ID_DATABASE_ATTRIBUTE},
+				#{item.ID_DATABASE},
+				#{item.CODE},
+				#{item.VALUE_STR}
+			)
+		</foreach>
+	</insert>
+	
+	<select id="get" resultType="Rdatabase" >
+		SELECT  DISTINCT
+			<include refid="rdatabaseColumns"/>
+		FROM r_database a
+		WHERE a.ID_DATABASE = #{databaseId}
+	</select>
+	
+	<select id="findList" resultType="Rdatabase">
+		SELECT 
+			<include refid="rdatabaseColumns"/>
+		FROM r_database a where 1 = 1
+		<if test="databaseId != null and databaseId != 0">
+			and a.ID_DATABASE = #{databaseId}
+		</if>
+		<if test="name != null and name != ''">
+			and a.NAME = #{name}
+		</if>
+		<if test="databaseTypeId != null and databaseTypeId != 0">
+			and a.ID_DATABASE_TYPE = #{databaseTypeId}
+		</if>
+		<if test="databaseContypeId != null and databaseContypeId != 0">
+			and a.ID_DATABASE_CONTYPE = #{databaseContypeId}
+		</if>
+		<if test="hostName != null and hostName != ''">
+			and a.HOST_NAME = #{hostName}
+		</if>
+		<if test="databaseName != null and databaseName != ''">
+			and a.DATABASE_NAME = #{databaseName}
+		</if>
+		<if test="port != null and port != 0">
+			and a.PORT = #{port}
+		</if>
+		<if test="userName != null and userName != ''">
+			and a.USERNAME = #{userName}
+		</if>
+		<if test="password != null and password != ''">
+			and a.PASSWORD = #{password}
+		</if>
+		<if test="serverName != null and serverName != ''">
+			and a.SERVERNAME = #{serverName}
+		</if>
+		<if test="repoId != null and repoId != 0">
+			and a.REPO_ID = #{repoId}
+		</if>
+		<if test="loginUserId != null and loginUserId != 0">
+			and a.LOGIN_USER_ID = #{loginUserId}
+		</if>
+		<if test="storeId != null and storeId != 0">
+			and a.STORE_ID = #{storeId}
+		</if>
+		<if test="sourceId != null and sourceId != 0">
+			and a.SOURCE_ID = #{sourceId}
+		</if>
+	</select>
+	
+	<select id="findAllList" resultType="Rdatabase" >
+		SELECT 
+			<include refid="rdatabaseColumns"/>
+		FROM r_database a
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+			</otherwise>
+		</choose>
+	</select>
+	
+	<update id="update">
+		UPDATE r_database SET 	
+			NAME = #{name},
+			ID_DATABASE_TYPE = #{databaseTypeId},
+			ID_DATABASE_CONTYPE = #{databaseContypeId},
+			HOST_NAME = #{hostName},
+			DATABASE_NAME = #{databaseName},
+			PORT = #{port},
+			USERNAME = #{userName},
+			PASSWORD = #{password},
+			SERVERNAME = #{serverName},
+			DATA_TBS = #{dataTbs},
+			INDEX_TBS = #{indexTbs},
+			REPO_ID = #{repoId},
+			LOGIN_USER_ID = #{loginUserId},
+			STORE_ID = #{storeId},
+			SOURCE_ID = #{sourceId}
+		WHERE ID_DATABASE = #{databaseId}
+	</update>
+	
+	<delete id="delete">
+		DELETE FROM r_database
+		WHERE ID_DATABASE = #{databaseId}
+	</delete>
+	
+	<update id="updateByRepoIdAndMetaType">
+		update r_database
+		<set>
+			<if test="rdatabase.databaseId != null">
+				ID_DATABASE = #{rdatabase.databaseId},
+			</if>
+			<if test="rdatabase.name != null and rdatabase.name != ''">
+				NAME = #{rdatabase.name},
+			</if>
+			<if test="rdatabase.hostName != null and rdatabase.hostName != ''">
+				HOST_NAME = #{rdatabase.hostName},
+			</if>
+			<if test="rdatabase.databaseName != null and rdatabase.databaseName != ''">
+				DATABASE_NAME = #{rdatabase.databaseName},
+			</if>
+			<if test="rdatabase.port != null and rdatabase.port != 0">
+				PORT = #{rdatabase.port},
+			</if>
+			<if test="rdatabase.userName != null and rdatabase.userName != ''">
+				USERNAME = #{rdatabase.userName},
+			</if>
+			<if test="rdatabase.password != null and rdatabase.password != ''">
+				PASSWORD = #{rdatabase.password},
+			</if>
+			<if test="rdatabase.loginUserId != null and rdatabase.loginUserId != ''">
+				LOGIN_USER_ID = #{rdatabase.loginUserId},
+			</if>
+			<if test="rdatabase.dataTbs != null and rdatabase.dataTbs != ''">
+				DATA_TBS = #{rdatabase.dataTbs},
+			</if>
+			<if test="rdatabase.indexTbs != null and rdatabase.indexTbs != ''">
+				INDEX_TBS = #{rdatabase.indexTbs},
+			</if>
+			<if test="rdatabase.repoId != null and rdatabase.repoId != ''">
+				REPO_ID = #{rdatabase.repoId},
+			</if>
+		</set>
+		<choose>
+		<when test="metaType==0">
+			where SOURCE_ID = #{rdatabase.sourceId}
+		</when>
+		<when test="metaType==1">
+			where STORE_ID = #{rdatabase.storeId}
+		</when>
+		<otherwise>
+			where REPO_ID = #{rdatabase.repoId}
+		</otherwise>
+		</choose>
+	</update>
+	<delete id="delByRepoIdAndMetaType">
+		DELETE FROM r_database
+		where REPO_ID = #{rdatabase.repoId}
+		<if test="metaType==0">
+			and SOURCE_ID = #{rdatabase.sourceId}
+		</if>
+		<if test="metaType==1">
+			and STORE_ID = #{rdatabase.storeId}
+		</if>
+	</delete>
+	
+	<delete id="deleteAttrByRDId">
+		DELETE FROM r_database_attribute where ID_DATABASE = #{rdatabaseId}
+	</delete>
+	
+	<select id="getNextId" resultType="int">
+		select ID_DATABASE+1 from r_database ORDER BY ID_DATABASE desc limit 1
+	</select>
+	
+	<select id="getNextAttrId" resultType="Integer">
+		select ID_DATABASE_ATTRIBUTE+1 from r_database_attribute ORDER BY ID_DATABASE_ATTRIBUTE desc limit 1
+	</select>
+</mapper>

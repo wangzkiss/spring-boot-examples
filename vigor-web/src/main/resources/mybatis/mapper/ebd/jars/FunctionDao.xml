@@ -1,0 +1,218 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.vigor.modules.jars.dao.FunctionDao">
+    
+	<sql id="functionColumns">
+		a.function_id AS "id",
+		a.function_name AS "functionName",
+		a.function_type AS "functionType",
+		a.function_desc AS "functionDesc",
+		a.function_class AS "functionClass",
+		a.function_status AS "functionStatus",
+		a.return_type AS "returnType",
+		a.param_nums AS "paramNums",
+		a.param_type AS "paramType",
+		a.jar_id AS "jarId.id",
+		a.update_time AS "updateDate",
+		a.create_time AS "createDate",
+		a.create_user AS "createBy.name",
+		a.expansion_field AS "expansionField",
+		jarId.jar_name AS "jarId.jarName",
+		jarId.jar_type AS "jarId.jarType",
+		jarId.jar_path AS "jarId.jarPath",
+		a.del_flag AS "delFlag"
+	</sql>
+	
+	<sql id="dataPermisionColums">
+		IFNULL(tp.`share`,"N") as "share",
+	</sql>
+	
+	<sql id="jarJoins">
+		LEFT JOIN e_mapreduce_jar jarId ON jarId.jar_id = a.jar_id
+	</sql>
+	
+	<sql id="dataPermisionJoins">
+		LEFT JOIN e_data_permission as tp ON a.function_id=tp.data_id AND tp.data_type='function' AND a.function_status != 1
+	</sql>
+    
+	<select id="get" resultType="Function" >
+		SELECT  DISTINCT
+			<include refid="functionColumns"/>
+		FROM e_function a
+		<include refid="jarJoins"/>
+		WHERE a.function_id = #{id}
+	</select>
+	
+	<select id="findList" resultType="Function" >
+		SELECT DISTINCT
+			<if test="isAdmin!=1">
+				<include refid="dataPermisionColums"/>
+			</if> 
+			<include refid="functionColumns"/>
+		FROM e_function a
+		<include refid="jarJoins"/>
+		<if test="isAdmin!=1">
+			<include refid="dataPermisionJoins"/>
+		</if> 
+		<where>
+			<if test="isAdmin!=1">
+				and (( tp.user_id=#{createBy.id} and tp.`query`='Y') or a.function_status = 1)
+			</if> 	
+			<if test="functionName != null and functionName != ''">
+				AND a.function_name LIKE 
+					<if test="dbName == 'oracle'">'%'||#{functionName}||'%'</if>
+					<if test="dbName == 'mssql'">'%'+#{functionName}+'%'</if>
+					<if test="dbName == 'mysql'">concat('%',#{functionName},'%')</if>
+			</if>
+			<if test="functionType != null and functionType != ''">
+				AND a.function_type = #{functionType}
+			</if>
+			<if test="vtype != null and vtype == 'vdi'">
+				AND a.function_type in (11)
+			</if>
+			<if test="vtype != null and vtype == 'vdp'">
+				AND a.function_type in (1,2,4,6,7,8,12)
+			</if>
+			<if test="jarId != null and jarId.id != null and jarId.id != ''">
+				AND a.jar_id = #{jarId.id}
+			</if>
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="findAllList" resultType="Function" >
+		SELECT 
+			<include refid="functionColumns"/>
+		FROM e_function a
+		<include refid="jarJoins"/>
+		<where>
+			
+		</where>		
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+			</otherwise>
+		</choose>
+	</select>
+	
+	<insert id="insert" useGeneratedKeys="true" keyColumn="id"
+		keyProperty="id" parameterType="Function">
+		INSERT INTO e_function(	
+			function_name,
+			function_type,
+			function_desc,
+			function_class,
+			return_type,
+			function_status,
+			<if test="jarId != null and jarId.id != null and jarId.id != ''">
+				jar_id,
+			</if>
+			update_time,
+			create_time,
+			create_user,
+			expansion_field
+		) VALUES (
+			#{functionName},
+			#{functionType},
+			#{functionDesc},
+			#{functionClass},
+			#{returnType},
+			#{functionStatus},
+			<if test="jarId != null and jarId.id != null and jarId.id != ''">
+				#{jarId.id},
+			</if>
+			#{updateDate},
+			#{createDate},
+			#{createBy.name},
+			#{expansionField}
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE e_function SET 	
+			function_name = #{functionName},
+			function_type = #{functionType},
+			function_desc = #{functionDesc},
+			function_class = #{functionClass},
+			return_type = #{returnType},
+			param_nums = #{paramNums},
+			<!-- param_type = #{paramType}, -->
+			<if test="jarId != null and jarId.id != null and jarId.id != ''">
+				jar_id = #{jarId.id},
+			</if>
+			expansion_field = #{expansionField}
+		WHERE function_id = #{id}
+	</update>
+	
+	
+	<!--物理删除-->
+	<update id="delete">
+		DELETE FROM e_function
+		WHERE function_id = #{id}
+	</update>
+	
+	<!--逻辑删除-->
+	<update id="deleteByLogic">
+		UPDATE e_function SET 
+			del_flag = #{DEL_FLAG_DELETE}
+		WHERE function_id = #{id}
+	</update>
+	
+	
+	<!-- 根据实体名称和字段名称和字段值获取唯一记录 -->
+	<select id="findUniqueByProperty" resultType="Function" statementType="STATEMENT">
+		select * FROM e_function  where ${propertyName} = '${value}'
+	</select>
+	
+	<select id="findListByjarId" resultType="MapreduceJar">
+		SELECT 
+			*
+		FROM e_mapreduce_jar a
+		<where>
+			a.del_flag = #{DEL_FLAG_NORMAL}
+			<if test="jarName != null and jarName != ''">
+				AND a.jarName LIKE 
+				<if test="dbName == 'oracle'">#{jarName}||'%'</if>
+				<if test="dbName == 'mssql'">#{jarName}+'%'</if>
+				<if test="dbName == 'mysql'">concat(#{jarName},'%')</if>
+			</if>
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY a.update_date DESC
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="findAllFunctionByType" resultType="Function" parameterType="int">
+		SELECT 
+			<include refid="functionColumns"/>
+		FROM e_function a
+		<include refid="jarJoins"/>
+		<where>
+			a.function_type=#{type}
+		</where>
+		ORDER BY a.create_time DESC		
+	</select>
+	
+	<select id="findEtlJobModule" resultType="Job" parameterType="string">
+		select
+			a.`name` as jobName,  
+			a.task_type as typeName
+		from
+			r_job as a
+		where  a.task_type = #{type}
+	</select>
+	
+</mapper>

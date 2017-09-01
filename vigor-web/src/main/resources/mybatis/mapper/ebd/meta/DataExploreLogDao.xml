@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.vigor.modules.meta.dao.DataExploreLogDao">
+
+	<sql id="dataExploreLogColumns">
+		a.id as "id",
+		a.repo_id as "repoId",
+		a.search_sql as "searchSql",
+		a.search_status as "searchStatus",
+		a.search_type as "searchType",
+		a.search_time as "searchTime",
+		a.create_user as "createUser",
+		a.del_flag as "delFlag",
+		a.error_msg as "errorMsg",
+		a.relation_tables as "relationTables"
+	</sql>
+
+	<select id="get" resultType="DataExploreLog" parameterType="java.lang.String">
+		select
+		<include refid="dataExploreLogColumns"></include>
+		from e_data_explore_log a where a.id = #{id}
+	</select>
+
+	<select id="findList" resultType="DataExploreLog" parameterType="DataExploreLog">
+		SELECT DISTINCT
+			<include refid="dataExploreLogColumns"/>
+		FROM e_data_explore_log a
+		<where>
+			a.del_flag = #{DEL_FLAG_NORMAL}
+			<if test="repoId != null and repoId != 0">
+				and a.repo_id = #{repoId}
+			</if> 
+			<if test="searchStatus != null and searchStatus != 0">
+				and a.search_status = #{searchStatus}
+			</if>
+			<if test="searchType != null and searchType != ''">
+				and a.search_type = #{searchType}
+			</if>
+			<if test="searchTime != null">
+				and a.search_time = #{searchTime}
+			</if>
+			<if test="isAdmin!=1">
+				<if test="createUser != null and createUser != ''">
+					AND a.create_user = #{createUser}
+				</if> 
+			</if> 	
+			<if test="searchSql != null and searchSql != ''">
+				AND a.search_sql like CONCAT('%', #{searchSql}, '%')
+			</if>
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+			ORDER BY  a.search_time desc
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="findAllList" resultType="DataExploreLog"  parameterType="DataExploreLog" >
+		select DISTINCT
+			<include refid="dataExploreLogColumns"/>
+		from e_data_explore_log a 
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+			</otherwise>
+		</choose>
+	</select>
+	
+	<insert id="insert"  useGeneratedKeys="true" keyColumn="id"
+		keyProperty="id" parameterType="DataExploreLog">
+		INSERT INTO e_data_explore_log(
+			repo_id,
+			search_sql,
+			search_status,
+			search_type,
+			search_time,
+			create_user,
+			del_flag,
+			error_msg,
+			relation_tables
+		) VALUES (
+			#{repoId},
+			#{searchSql},
+			#{searchStatus},
+			#{searchType},
+			#{searchTime},
+			#{createUser},
+			#{delFlag},
+			#{errorMsg},
+			#{relationTables}
+		)
+	</insert>
+	
+	<!--物理删除-->
+	<update id="delete">
+		DELETE FROM e_data_explore_log
+		WHERE id = #{id}
+	</update>
+	
+	<!--逻辑删除-->
+	<update id="deleteByLogic">
+		UPDATE e_data_explore_log SET 
+			del_flag = #{DEL_FLAG_DELETE}
+		WHERE id = #{id}
+	</update>
+</mapper>

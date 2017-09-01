@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.vigor.modules.tji.dao.TaskGroupDao">
+    
+	<sql id="taskGroupColumns">
+		a.group_id AS "groupId",
+		a.group_name AS "groupName",
+		a.group_desc AS "groupDesc",
+		a.group_type AS "groupType",
+		a.create_user AS "createUser",
+		a.create_time AS "createTime"
+	</sql>
+	
+	<select id="get" resultType="TaskGroup" >
+		SELECT 
+			<include refid="taskGroupColumns"/>
+		FROM e_task_group a
+		WHERE a.group_id = #{groupId}
+	</select>
+	
+	<select id="findList" resultType="TaskGroup" >
+		SELECT 
+			a.group_id AS "groupId",
+			a.group_name AS "groupName",
+			a.group_desc AS "groupDesc",
+			a.group_type AS "groupType",
+			a.create_time AS "createTime",
+			IFNULL(b.task_num,0) AS "taskNum"
+		FROM e_task_group a
+		LEFT JOIN (select group_id,count(1) as task_num from e_task group by group_id) b
+		on a.group_id=b.group_id
+		<where>
+			<if test="groupName != null and groupName != ''">
+				AND a.group_name like CONCAT("%",#{groupName},"%")
+			</if>
+			<if test="groupType != null and groupType != ''">
+				AND a.group_type = #{groupType}
+			</if>
+			<if test="vtype != null and vtype == 'vdi'">
+				AND a.group_type in (1)
+			</if>
+			<if test="vtype != null and vtype == 'vdp'">
+				AND a.group_type in (2,3)
+			</if>
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="getGroups" resultType="map">
+		SELECT 
+			a.group_id AS "groupId",
+			a.group_name AS "groupName"
+		FROM e_task_group a
+		WHERE a.group_type = #{groupType}
+	</select>
+	
+	<select id="getGroupByName" resultType="TaskGroup" >
+		SELECT 
+			<include refid="taskGroupColumns"/>
+		FROM e_task_group a
+		WHERE a.group_name = #{groupName}
+	</select>
+	
+	<insert id="insert">
+		INSERT INTO e_task_group(
+			group_name,
+			group_type,
+			group_desc,
+			create_user,
+			create_time
+		) VALUES (
+			#{groupName},
+			#{groupType},
+			#{groupDesc},
+			#{currentUser.loginName},
+			now()
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE e_task_group SET 	
+			group_desc = #{groupDesc}
+		WHERE group_id = #{groupId}
+	</update>
+	
+	
+	<!--物理删除-->
+	<update id="delete">
+		DELETE FROM e_task_group
+		WHERE group_id = #{groupId}
+	</update>
+	
+	<!-- 根据实体名称和字段名称和字段值获取唯一记录 -->
+	<select id="findUniqueByProperty" resultType="TaskGroup" statementType="STATEMENT">
+		select * FROM e_task_group  where ${propertyName} = '${value}'
+	</select>
+	
+	<!-- 根据类型获取分组信息 -->
+	<select id="getGroupInfoByType" resultType="TaskGroup" >
+		SELECT 
+			<include refid="taskGroupColumns"/>
+		FROM e_task_group a WHERE a.group_type = #{groupType}
+	</select>
+	
+</mapper>

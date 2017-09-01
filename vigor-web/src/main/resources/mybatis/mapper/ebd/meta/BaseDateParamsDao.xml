@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.vigor.modules.meta.dao.BaseDateParamsDao">
+
+	<!-- select table_name,table_comment from information_schema.tables where 
+		table_schema = 'rbd'; select column_name ,column_type,column_comment from 
+		information_schema.columns where table_name='t_sys_user' and table_schema='rbd'; 
+		#{dataBaseName}
+		-->
+
+	<select id="findList" resultType="BaseDateParams" parameterType="BaseDateParams">
+		select * from e_base_dateparams where 1 = 1
+		<if test="forPartition != -1">
+			and for_partition = #{forPartition}
+		</if>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+			</otherwise>
+		</choose> 
+	</select>
+</mapper>

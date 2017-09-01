@@ -1,0 +1,129 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.vigor.modules.partner.dao.PartnerServiceLogDao">
+    
+	<sql id="partnerServiceLogColumns">
+		a.partner_id AS "partnerId", 
+		B.partner_name AS "partnerName", 
+		a.service_id AS "serviceId",
+		C.service_name AS "serviceName", 
+		a.service_time AS "serviceTime",
+		a.service_result AS "serviceResult",
+		a.result_desc AS "resultDesc",
+		a.id AS "id",
+		a.job_id AS "jobId"
+	</sql>
+	
+	<sql id="partnerServiceLogJoins"> 
+	join e_partner B on a.partner_id = B.partner_id 
+	join e_service_info C on a.service_id = C.service_id 
+	</sql>
+	
+    
+	<select id="get" resultType="PartnerServiceLog" >
+		SELECT 
+			<include refid="partnerServiceLogColumns"/>
+		FROM e_partner_service_log a
+		<include refid="partnerServiceLogJoins"/>
+		WHERE a.id = #{id}
+	</select>
+	
+	<select id="findList" resultType="PartnerServiceLog" >
+		SELECT 
+			<include refid="partnerServiceLogColumns"/>
+		FROM e_partner_service_log a
+		<include refid="partnerServiceLogJoins"/>
+		<where>
+			
+			<if test="partnerName != null and partnerName != ''">
+				AND B.partner_name LIKE 
+				<if test="dbName == 'oracle'">'%'||#{partnerName}||'%'</if>
+				<if test="dbName == 'mssql'">'%'+#{partnerName}+'%'</if>
+				<if test="dbName == 'mysql'">concat('%',#{partnerName},'%')</if>
+			</if>
+			<if test="serviceName != null and serviceName != ''">
+				AND C.service_name LIKE 
+				<if test="dbName == 'oracle'">'%'||#{serviceName}||'%'</if>
+				<if test="dbName == 'mssql'">'%'+#{serviceName}+'%'</if>
+				<if test="dbName == 'mysql'">concat('%',#{serviceName},'%')</if>
+			</if>
+		</where>
+		order by a.service_time desc 
+		<!-- <choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+			</otherwise>
+		</choose> -->
+	</select>
+	
+	<select id="findAllList" resultType="PartnerServiceLog" >
+		SELECT 
+			<include refid="partnerServiceLogColumns"/>
+		FROM e_partner_service_log a
+		<include refid="partnerServiceLogJoins"/>
+		<where>
+			
+		</where>		
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+			</otherwise>
+		</choose>
+	</select>
+	
+	<insert id="insert">
+		INSERT INTO e_partner_service_log(
+			partner_id,
+			service_id,
+			service_time,
+			service_result,
+			result_desc,
+			id,
+			job_id
+		) VALUES (
+			#{partnerId},
+			#{serviceId},
+			#{serviceTime},
+			#{serviceResult},
+			#{resultDesc},
+			#{id},
+			#{jobId}
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE e_partner_service_log SET 	
+			partner_id = #{partnerId},
+			service_id = #{serviceId},
+			service_time = #{serviceTime},
+			service_result = #{serviceResult},
+			result_desc = #{resultDesc},
+			job_id = #{jobId}
+		WHERE id = #{id}
+	</update>
+	
+	
+	<!--物理删除-->
+	<update id="delete">
+		DELETE FROM e_partner_service_log
+		WHERE id = #{id}
+	</update>
+	
+	<!--逻辑删除-->
+	<update id="deleteByLogic">
+		UPDATE e_partner_service_log SET 
+			del_flag = #{DEL_FLAG_DELETE}
+		WHERE id = #{id}
+	</update>
+	
+	
+	<!-- 根据实体名称和字段名称和字段值获取唯一记录 -->
+	<select id="findUniqueByProperty" resultType="PartnerServiceLog" statementType="STATEMENT">
+		select * FROM e_partner_service_log  where ${propertyName} = '${value}'
+	</select>
+	
+</mapper>

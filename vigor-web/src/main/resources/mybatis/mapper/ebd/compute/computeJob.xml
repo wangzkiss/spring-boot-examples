@@ -1,0 +1,410 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.vigor.modules.compute.dao.ComputeJobDao">
+	
+	<resultMap type="cn.vigor.modules.compute.bean.ComputeTask" id="taskMap">
+		<id property="id" column="task_id"/>
+		<result property="name" column="task_name"/>
+		<result property="typeName" column="task_type_name"/>
+		<result property="desc" column="task_desc"/>
+		<result property="functionName" column="function_Name"/>
+		<result property="createDate" column="create_date" jdbcType="TIMESTAMP"/>
+		<result property="algorithmType" column="algorithm_type"/>
+	</resultMap>
+	
+	<resultMap type="cn.vigor.modules.compute.bean.Schedule" id="scheduleMap">
+		<id property="id" column="schedule_id"/>
+		<result property="name" column="schedule_name"/>
+		<result property="desc" column="schedule_desc"/>
+		<result property="rule" column="schedule_rule"/>
+	</resultMap>
+	
+	<resultMap type="cn.vigor.modules.compute.bean.JobType" id="jobTypeMap">
+		<id property="id" column="job_type_id"/>
+		<result property="name" column="job_type_name"/>
+	</resultMap>
+	
+	<resultMap type="cn.vigor.modules.compute.bean.ComputeJob" id="jobMap">
+		<id property="id" column="job_id"/>
+		<result property="name" column="job_name"/>
+		<result property="typeName" column="task_type_name"/>
+		<result property="type" column="job_type_id"/>
+		<result property="status" column="job_status"/>
+		<result property="createDate" column="create_time" jdbcType="TIMESTAMP"/>
+		<result property="taskType" column="task_type"/>
+		<result property="tallyDown" column="tally_down"/>
+		<result property="relationGoal" column="relation_goal"/>
+		<result property="createUserid" column="create_userid"/>
+		<result property="ownerUserid" column="owner_userid"/>
+		
+	</resultMap>
+	
+	<resultMap type="cn.vigor.modules.compute.bean.Output" id="outputMap">
+		<result property="taskType" column="task_type"/>
+		<result property="taskId" column="task_id"/>
+		<result property="jobId" column="job_id"/>
+		<result property="taskName" column="task_name"/>
+		<result property="taskDesc" column="task_desc"/>
+		<result property="algorithmType" column="algorithm_type"/>
+		<result property="outputType" column="output_type"/>
+	  	<result property="name" column="result_name"/>
+ 		<result property="desc" column="result_desc"/>
+ 		<result property="delimiter" column="delimiter"/>
+ 		<result property="ip" column="result_ip"/>
+ 		<result property="id" column="result_id"/>
+ 		<result property="port" column="result_port"/>
+ 		<result property="dir" column="result_dir"/>
+ 		<result property="username" column="result_user"/>
+ 		<result property="password" column="result_password"/>
+ 		<result property="file" column="result_file"/>
+ 		<result property="type" column="result_type"/>
+ 		<result property="sourceId" column="store_id"/>
+ 		<result property="functionId" column="function_id"/>
+ 		
+ 		<result property="schedule.id" column="schedule_id"/>
+ 		<result property="schedule.scheduleType" column="schedule_type"/>
+		<result property="schedule.name" column="schedule_name"/>
+		<result property="schedule.desc" column="schedule_desc"/>
+		<result property="schedule.rule" column="schedule_rule"/>
+		<result property="schedule.errorStrategy" column="error_strategy"/>
+		<result property="schedule.tryTimes" column="error_try_times"/>
+		<result property="schedule.email" column="error_notify_email"/>
+		<result property="schedule.execTimes" column="exec_times"/>
+		<result property="schedule.startTime" column="exec_start_time"/>
+		
+		<result property="schedule.execFreq" column="exec_freq"/>
+		<result property="schedule.execFreqValue" column="exec_freq_value"/>
+		<result property="schedule.execField" column="exec_field"/>
+	</resultMap>
+	
+	
+	<resultMap type="cn.vigor.modules.compute.bean.Output" id="etlOutputMap">
+		<result property="taskType" column="task_type"/>
+		<result property="taskId" column="task_id"/>
+		<result property="jobId" column="job_id"/>
+		<result property="taskName" column="task_name"/>
+		<result property="taskDesc" column="task_desc"/>
+		<result property="algorithmType" column="algorithm_type"/>
+	  	<result property="name" column="store_name"/>
+ 		<result property="desc" column="store_desc"/>
+ 		<result property="delimiter" column="delimiter"/>
+ 		<result property="ip" column="store_ip"/>
+ 		<result property="id" column="store_id"/>
+ 		<result property="port" column="store_port"/>
+ 		<result property="dir" column="store_dir"/>
+ 		<result property="username" column="store_user"/>
+ 		<result property="password" column="store_password"/>
+ 		<result property="file" column="store_file"/>
+ 		<result property="type" column="store_type"/>
+ 		<result property="sourceId" column="source_id"/>
+ 		
+		<result property="schedule.id" column="schedule_id"/>
+		<result property="schedule.scheduleType" column="schedule_type"/>
+		<result property="schedule.name" column="schedule_name"/>
+		<result property="schedule.desc" column="schedule_desc"/>
+		<result property="schedule.rule" column="schedule_rule"/>
+		<result property="schedule.errorStrategy" column="error_strategy"/>
+		<result property="schedule.tryTimes" column="error_try_times"/>
+		<result property="schedule.email" column="error_notify_email"/>
+		<result property="schedule.execTimes" column="exec_times"/>
+		<result property="schedule.startTime" column="exec_start_time"/>
+		
+		<result property="schedule.execFreq" column="exec_freq"/>
+		<result property="schedule.execFreqValue" column="exec_freq_value"/>
+		<result property="schedule.execField" column="exec_field"/>
+	</resultMap>
+	
+	<select id="getTasks" resultMap="taskMap">
+		SELECT 
+		  task_id,
+		  task_name,
+		  task_desc,
+		  create_date,
+		  algorithm_type,
+		  f.function_name,
+          t.task_type,
+		  tt.type_name as task_type_name 
+		FROM 
+		  e_task t  
+		  left join e_function f on t.function_id = f.function_id
+		  left join e_base_task_type tt on t.task_type = tt.type_id
+		where t.job_id is null
+	</select>
+	
+	<select id="getTasksByJobType" resultMap="taskMap" parameterType="int">
+		SELECT 
+		  task_id,
+		  task_name,
+		  task_desc,
+		  create_date,
+		  algorithm_type,
+		  f.function_name,
+          t.task_type,
+		  tt.type_name as task_type_name 
+		FROM 
+		  e_task t  
+		  left join e_function f on t.function_id = f.function_id
+		  left join e_base_task_type tt on t.task_type = tt.type_id
+		where t.job_id is null 
+		 and tt.job_type_id = #{jobType}
+	</select>
+	
+	
+	
+	<select id="getJobTypes" resultMap="jobTypeMap">
+		SELECT type_id as job_type_id, type_name as job_type_name FROM e_base_job_type
+	</select>
+	
+	<select id="getSchedules" resultMap="scheduleMap">
+		SELECT * FROM e_schedule
+	</select>
+	
+	<select id="getJobTypeByTaskType" resultType="int" parameterType="int">
+		SELECT job_type_id FROM e_base_task_type where type_id = #{task_type}
+	</select>
+	
+	<insert id="insertJob" parameterType="Job" useGeneratedKeys="true" keyColumn="job_id" keyProperty="id">
+		INSERT INTO 
+		  e_job
+		(
+		  job_name,
+		  job_type_id,
+		  job_desc,
+		  job_status,
+		  come_from,
+		  create_time,
+		  create_userid
+		) 
+		VALUE (
+		  #{name},
+		  #{type},
+		  #{desc},
+		  0,
+		  0,
+		  now(),
+		  #{createUserid}
+		)
+	</insert>
+
+	<insert id="insertJobSchedule" parameterType="Job">
+		INSERT INTO 
+		  e_job_schedule
+		(
+		  job_id,
+		  schedule_id
+		) 
+		VALUE (
+		  #{id},
+		  #{scheduleId}
+		)
+	</insert>
+	
+	<insert id="addJobIdToTask" parameterType="Job">
+		update e_task set job_id = #{id} where task_id = #{taskId}
+	</insert>
+	
+	<select id="getJobListByJobId" resultMap="jobMap" parameterType="int">
+		select j.job_id,j.job_name, j.job_type_id, j.job_status,j.create_time, 
+			tt.type_name as task_type_name,t.task_type
+		from e_job j
+		join e_task t on t.job_id = j.job_id
+		join e_base_task_type tt on t.task_type = tt.type_id
+		where t.job_id = #{jobId}
+		order by j.create_time desc
+	</select>
+	
+	<select id="getDependJobById" resultMap="jobMap" parameterType="int">
+		select j.job_id,j.job_name, j.job_type_id, j.job_status,j.create_time, 
+			tt.type_name as task_type_name,t.task_type,tjrr.tally_down,tjrr.relation_goal 
+		from e_job j
+		join e_task t on t.job_id = j.job_id
+		join e_job_rely_relation tjrr on tjrr.preposed_job_id = j.job_id
+		join e_base_task_type tt on t.task_type = tt.type_id
+		where tjrr.job_id=#{jobId}
+		order by j.create_time desc
+	</select>
+	
+	
+<insert id="insertTJobRelyRelation" parameterType="cn.vigor.modules.compute.bean.TableDependency">
+		INSERT INTO
+		e_job_rely_relation
+		(
+		job_id,
+		preposed_job_id,
+		tally_down,
+		relation_goal
+		)
+		VALUE (
+		#{jobId},
+		#{preposedJobId},
+		#{tallyDown},
+		#{relationGoal}
+		)
+	</insert>
+	
+	<select id="getJobList" resultMap="jobMap">
+		select j.job_id,j.job_name, j.job_type_id, j.job_status,j.create_time, 
+			tt.type_name as task_type_name,t.task_type
+		from e_job j
+		join e_task t on t.job_id = j.job_id
+		join e_base_task_type tt on t.task_type = tt.type_id
+		where t.task_type not in (2,19)
+		order by j.create_time desc
+	</select>
+	
+	<select id="getJobDetailById" resultMap="outputMap" parameterType="int">
+		select distinct t.task_type, t.task_name, t.task_desc, t.task_id, t.job_id,t.function_id,t.algorithm_type,output.output_type, 
+		mr.result_name,mr.result_type,mr.result_id,mr.delimiter,mr.result_desc,
+		mr.result_ip,mr.result_port,mr.result_dir,mr.result_file,mr.result_user,
+		mr.result_password
+		from e_task t
+		
+		left join e_task_output output on output.task_id = t.task_id
+		left join e_meta_result mr on mr.result_id = output.output_id
+		
+		where t.job_id = #{jobId}
+		<!--  ms.store_id,
+		join e_task_input input on input.task_id = t.task_id
+		join e_meta_store ms on ms.store_id = input.input_id
+		join e_job_schedule js on js.job_id = t.job_id
+		left join e_schedule sch on sch.schedule_id = js.schedule_id
+		,  sch.*
+		 -->
+	</select>
+	
+	<select id="getScriptJobDetailById" resultMap="outputMap" parameterType="int">
+		select distinct t.task_type, t.task_name, t.task_desc, t.task_id, t.job_id,t.function_id,t.algorithm_type,output.output_type
+		from e_task t 		
+		left join e_task_output output on output.task_id = t.task_id
+		where t.job_id = #{jobId}
+		<!--  ms.store_id,
+		join e_task_input input on input.task_id = t.task_id
+		join e_meta_store ms on ms.store_id = input.input_id
+		 -->
+	</select>
+	
+	<select id="getJobDetailInMetaStoreById" resultMap="outputMapMetaStore" parameterType="int">
+		select t.task_type, t.task_name, t.task_desc, t.task_id, t.job_id,t.function_id,t.algorithm_type,output.output_type, 
+		ms.store_name,ms.store_type,ms.store_id,ms.delimiter,ms.store_desc,
+		ms.store_ip,ms.store_port,ms.store_dir,ms.store_file,ms.store_user,
+		ms.store_password
+		from e_task t
+		join e_task_output output on output.task_id = t.task_id
+		join e_meta_store ms on ms.store_id = output.output_id
+		where t.job_id =#{jobId}
+		<!--
+		,  sch.*
+		
+		join e_job_schedule js on js.job_id = t.job_id
+		join e_schedule sch on sch.schedule_id = js.schedule_id
+		-->
+	</select>
+	
+	<resultMap type="cn.vigor.modules.compute.bean.Output" id="outputMapMetaStore">
+		<result property="taskType" column="task_type"/>
+		<result property="taskId" column="task_id"/>
+		<result property="jobId" column="job_id"/>
+		<result property="taskName" column="task_name"/>
+		<result property="taskDesc" column="task_desc"/>
+		<result property="algorithmType" column="algorithm_type"/>
+		<result property="outputType" column="output_type"/>
+	  	<result property="name" column="store_name"/>
+ 		<result property="desc" column="store_desc"/>
+ 		<result property="delimiter" column="delimiter"/>
+ 		<result property="ip" column="store_ip"/>
+ 		<result property="id" column="store_id"/>
+ 		<result property="port" column="store_port"/>
+ 		<result property="dir" column="store_dir"/>
+ 		<result property="username" column="store_user"/>
+ 		<result property="password" column="store_password"/>
+ 		<result property="file" column="store_file"/>
+ 		<result property="type" column="store_type"/>
+ 		<result property="sourceId" column="store_id"/>
+ 		<result property="functionId" column="function_id"/>
+ 		
+ 		<result property="schedule.id" column="schedule_id"/>
+ 		<result property="schedule.scheduleType" column="schedule_type"/>
+		<result property="schedule.name" column="schedule_name"/>
+		<result property="schedule.desc" column="schedule_desc"/>
+		<result property="schedule.rule" column="schedule_rule"/>
+		<result property="schedule.errorStrategy" column="error_strategy"/>
+		<result property="schedule.tryTimes" column="error_try_times"/>
+		<result property="schedule.email" column="error_notify_email"/>
+		<result property="schedule.execTimes" column="exec_times"/>
+		<result property="schedule.startTime" column="exec_start_time"/>
+		
+		<result property="schedule.execFreq" column="exec_freq"/>
+		<result property="schedule.execFreqValue" column="exec_freq_value"/>
+		<result property="schedule.execField" column="exec_field"/>
+	</resultMap>
+	
+	<resultMap type="cn.vigor.modules.compute.bean.Output" id="etlFlumeOutputMap">
+		<result property="taskType" column="task_type"/>
+		<result property="taskId" column="task_id"/>
+		<result property="jobId" column="job_id"/>
+		<result property="taskName" column="task_name"/>
+		<result property="taskDesc" column="task_desc"/>
+		<result property="algorithmType" column="algorithm_type"/>
+ 		
+		<result property="schedule.id" column="schedule_id"/>
+		<result property="schedule.scheduleType" column="schedule_type"/>
+		<result property="schedule.name" column="schedule_name"/>
+		<result property="schedule.desc" column="schedule_desc"/>
+		<result property="schedule.rule" column="schedule_rule"/>
+		<result property="schedule.errorStrategy" column="error_strategy"/>
+		<result property="schedule.tryTimes" column="error_try_times"/>
+		<result property="schedule.email" column="error_notify_email"/>
+		<result property="schedule.execTimes" column="exec_times"/>
+		<result property="schedule.startTime" column="exec_start_time"/>
+		
+		<result property="schedule.execFreq" column="exec_freq"/>
+		<result property="schedule.execFreqValue" column="exec_freq_value"/>
+		<result property="schedule.execField" column="exec_field"/>
+	</resultMap>
+	
+	<!-- ETL任务关联的表是e_meta_store -->
+	<select id="getETLJobDetailById" resultMap="etlFlumeOutputMap" parameterType="int">
+	select distinct t.task_type,t.task_id,t.job_id, t.task_name, t.task_desc, t.algorithm_type from e_task t
+	join e_task_output output on output.task_id = t.task_id
+	
+	where t.job_id =#{jobId} 
+	
+	<!--
+	, sch.*
+	join e_job_schedule js on js.job_id = t.job_id
+	join e_schedule sch on sch.schedule_id = js.schedule_id
+	 -->
+	</select>
+	
+	<!-- 这是之前的 方法的代码 但已不适用 
+	select distinct t.task_type, t.task_name, t.task_desc, t.task_id, t.job_id,t.algorithm_type,
+	ms.store_name,ms.store_type,ms.store_id,ms.delimiter,ms.store_desc,
+	ms.store_ip,ms.store_port,ms.store_dir,ms.store_file,ms.store_user,
+	ms.store_password,  s.source_id, sch.*
+	from e_task t
+	join e_task_input input on input.task_id = t.task_id
+	join e_meta_source s on s.source_id = input.input_id
+	join e_task_output output on output.task_id = t.task_id
+	join e_meta_store ms on ms.store_id = output.output_id
+	join e_job_schedule js on js.job_id = t.job_id
+	join e_schedule sch on sch.schedule_id = js.schedule_id
+	where t.job_id = #{jobId} -->
+	
+	<select id="getTaskPro" resultType="string" parameterType="int">
+		select property from e_task_data_pro p
+		join e_task t on t.task_id = p.task_id 
+		where t.job_id = #{jobId}
+	</select> 
+	
+	<delete id="deleteJobSchedule" parameterType="int">
+		delete from e_job_schedule where job_id =#{jodId}
+	</delete>
+	
+	<delete id="deleteRelyRelation" parameterType="int">
+		delete from e_job_rely_relation where job_id =#{jodId}
+	</delete>
+	
+	<delete id="deleteJob" parameterType="int">
+		delete from e_job where job_id =#{jodId}
+	</delete>
+</mapper>

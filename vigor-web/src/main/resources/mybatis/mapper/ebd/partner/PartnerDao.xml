@@ -1,0 +1,173 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.vigor.modules.partner.dao.PartnerDao">
+    
+	<sql id="partnerColumns">
+		a.partner_id AS "partnerId",
+		a.partner_name AS "partnerName",
+		a.partner_type AS "partnerType",
+		a.partner_desc AS "partnerDesc",
+		a.bind_userid AS "bindUserid",
+		a.app_key AS "appKey",
+		a.secret_key AS "secretKey",
+		a.partner_status AS "partnerStatus",
+		a.contact_name AS "contactName",
+		a.contact_email AS "contactEmail",
+		a.contact_phone AS "contactPhone",
+		a.ftp_ip AS "ftpIp",
+		a.ftp_port AS "ftpPort",
+		a.ftp_path AS "ftpPath", 
+		a.ftp_user AS "ftpUser",
+		a.ftp_password AS "ftpPassword",
+		a.create_user AS "createUser",
+		a.create_time AS "createTime",
+		a.modify_user AS "modifyUser",
+		a.modify_time AS "modifyTime"
+	</sql>
+	
+	<sql id="partnerJoins">
+	</sql>
+	
+	<update id="audit">
+	update e_partner 
+	set partner_status = 1 
+	where partner_id = #{partnerId} 
+	</update>
+    
+	<select id="get" resultType="Partner" >
+		SELECT 
+			<include refid="partnerColumns"/>
+		FROM e_partner a
+		<include refid="partnerJoins"/>
+		WHERE a.partner_id = #{id}
+	</select>
+	
+	<select id="findList" resultType="Partner" >
+		SELECT 
+			<include refid="partnerColumns"/>
+		FROM e_partner a
+		<include refid="partnerJoins"/>
+		<where>
+			
+			<if test="partnerName != null and partnerName != ''">
+				AND a.partner_name LIKE 
+					<if test="dbName == 'oracle'">'%'||#{partnerName}||'%'</if>
+					<if test="dbName == 'mssql'">'%'+#{partnerName}+'%'</if>
+					<if test="dbName == 'mysql'">concat('%',#{partnerName},'%')</if>
+			</if>
+			<if test="partnerType != null and partnerType != ''">
+				AND a.partner_type = #{partnerType}
+			</if>
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy} desc 
+			</when>
+			<otherwise>
+				order by a.modify_time desc
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="findAllList" resultType="Partner" >
+		SELECT 
+			<include refid="partnerColumns"/>
+		FROM e_partner a
+		<include refid="partnerJoins"/>
+		<where>
+			
+		</where>		
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy} desc
+			</when>
+			<otherwise>
+				order by a.modify_time desc
+			</otherwise>
+		</choose>
+	</select>
+	
+	<insert id="insert" useGeneratedKeys="true" keyColumn="partner_id" keyProperty="partnerId">
+		INSERT INTO e_partner(
+			partner_name,
+			partner_type,
+			partner_desc,
+			bind_userid,
+			app_key,
+			secret_key,
+			partner_status,
+			contact_name,
+			contact_email,
+			contact_phone,
+			ftp_ip,
+			ftp_port,
+			ftp_path,
+			ftp_user,
+			ftp_password,
+			create_user,
+			create_time, 
+			modify_user, 
+			modify_time 
+		) VALUES (
+			#{partnerName},
+			#{partnerType},
+			#{partnerDesc},
+			${createBy.id},
+			#{appKey},
+			#{secretKey},
+			0,
+			#{contactName},
+			#{contactEmail},
+			#{contactPhone},
+			#{ftpIp},
+			#{ftpPort},
+			#{ftpPath}, 
+			#{ftpUser},
+			#{ftpPassword},
+			#{createBy.name},
+			now(), 
+			#{createBy.name}, 
+			now() 
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE e_partner SET 	
+			partner_name = #{partnerName},
+			partner_type = #{partnerType},
+			partner_desc = #{partnerDesc},
+			bind_userid = #{updateBy.id},
+			contact_name = #{contactName},
+			contact_email = #{contactEmail},
+			contact_phone = #{contactPhone},
+			ftp_ip = #{ftpIp},
+			ftp_port = #{ftpPort},
+			ftp_path = #{ftpPath},
+			ftp_user = #{ftpUser},
+			ftp_password = #{ftpPassword},
+			modify_user = #{updateBy.name},
+			modify_time = now() 
+		WHERE partner_id = #{partnerId}
+	</update>
+	
+	
+	<!--物理删除-->
+	<update id="delete">
+		DELETE FROM e_partner
+		WHERE partner_id = #{id}
+	</update>
+	
+	<!--逻辑删除-->
+	<update id="deleteByLogic">
+		UPDATE e_partner SET 
+			del_flag = #{DEL_FLAG_DELETE}
+		WHERE id = #{id}
+	</update>
+	
+	
+	<!-- 根据实体名称和字段名称和字段值获取唯一记录 -->
+	<select id="findUniqueByProperty" resultType="Partner" statementType="STATEMENT">
+		select * FROM e_partner  where ${propertyName} = '${value}'
+	</select>
+	
+</mapper>

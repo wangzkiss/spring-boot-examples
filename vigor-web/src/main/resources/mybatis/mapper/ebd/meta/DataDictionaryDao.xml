@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.vigor.modules.meta.dao.DataDictionaryDao">
+
+	<!-- select table_name,table_comment from information_schema.tables where 
+		table_schema = 'rbd'; select column_name ,column_type,column_comment from 
+		information_schema.columns where table_name='t_sys_user' and table_schema='rbd'; 
+		#{dataBaseName}
+		-->
+
+	<select id="get" resultType="DataDictionary" parameterType="DataDictionary">
+		select
+			table_name as "tableName",
+			table_comment as "tableComment"
+		from
+			information_schema.tables
+		where
+			table_schema = 'ebd' and table_name=#{tableName}
+	</select>
+
+	<select id="findList" resultType="DataDictionary" parameterType="DataDictionary">
+		select
+			table_name as "tableName",
+			table_comment as "tableComment"
+		from
+			information_schema.tables
+		<where>
+			table_schema = 'ebd'
+			<if test="tableName != null and tableName != ''">
+				AND table_name LIKE
+				<if test="dbName == 'oracle'">'%'||#{tableName}||'%'</if>
+				<if test="dbName == 'mssql'">'%'+#{tableName}+'%'</if>
+				<if test="dbName == 'mysql'">concat('%',#{tableName},'%')</if>
+			</if>
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+			</otherwise>
+		</choose> 
+	</select>
+	
+	<select id="findAllList" resultType="DataDictionary"  parameterType="DataDictionary" >
+		select DISTINCT
+			t.table_name as "tablename" ,
+			t.table_comment as "tablecomment",
+			a.column_name as "columnname",
+			a.column_type as "columntype",
+			a.column_key as "columnkey",
+			a.column_comment as "columncomment"
+		from
+			information_schema. columns  a 
+		left join  information_schema. tables t on  a.table_name=t.table_name
+		WHERE   t.table_schema =  'ebd'
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="findClums" resultType="DataDictionary"
+		parameterType="DataDictionary">
+		select DISTINCT
+			a.column_name AS "columnName",
+			a.column_type AS "columnType",
+			a.column_key AS "columnKey",
+			a.column_comment AS "columnComment"
+		from
+			information_schema.columns as a
+		where
+			table_name=#{tableName} and table_schema = 'ebd'
+	</select>
+
+
+</mapper>

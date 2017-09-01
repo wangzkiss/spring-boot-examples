@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.vigor.modules.server.dao.ClusterServicesDao">
+    
+	<sql id="clusterServicesColumns">
+		a.cluster_id AS "clusterId",
+		a.service_name AS "serviceName",
+		a.service_enabled AS "serviceEnabled"
+	</sql>
+    
+	
+	<select id="findList" resultType="ClusterServices" >
+		SELECT 
+			<include refid="clusterServicesColumns"/>
+		FROM clusterservices a
+		<where>
+			<if test="clusterId != null">
+				AND a.cluster_id = #{clusterId}
+			</if>
+			<if test="serviceName != null and serviceName != ''">
+				AND a.service_name = #{serviceName}
+			</if>
+			<if test="serviceEnabled != -1">
+				AND a.service_enabled = #{serviceEnabled}
+			</if>
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY a.service_name ASC
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="findAllList" resultType="ClusterServices" >
+		SELECT 
+			<include refid="clusterServicesColumns"/>
+		FROM clusterservices a
+	</select>
+</mapper>

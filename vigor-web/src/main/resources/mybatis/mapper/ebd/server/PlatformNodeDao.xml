@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.vigor.modules.server.dao.PlatformNodeDao">
+    
+	<sql id="platformNodeColumns">
+		a.id AS "id",
+		a.platform_id AS "platformId.id",
+		a.node_name AS "nodeName",
+		a.physical_id AS "physicalId",
+		a.node_type AS "nodeType",
+		a.node_port AS "nodePort",
+		a.node_dir AS "nodeDir",
+		a.node_ip AS "nodeIp",
+		a.node_url AS "nodeUrl",
+		a.node_user AS "nodeUser",
+		a.node_password AS "nodePassword",
+		a.node_state AS "nodeState",
+		a.etl_task_count AS "etlTaskCount",
+		a.create_by AS "createBy.id",
+		a.create_date AS "createDate",
+		a.update_by AS "updateBy.id",
+		a.update_date AS "updateDate",
+		a.remarks AS "remarks",
+		a.del_flag AS "delFlag"
+	</sql>
+	
+	<sql id="platformNodeJoins">
+		LEFT JOIN e_platform b ON b.id = a.platform_id
+	</sql>
+	
+    
+	<select id="get" resultType="PlatformNode" >
+		SELECT 
+			<include refid="platformNodeColumns"/>
+		FROM e_platform_node a
+		<include refid="platformNodeJoins"/>
+		WHERE a.id = #{id}
+	</select>
+	
+	<select id="findList" resultType="PlatformNode" >
+		SELECT 
+			<include refid="platformNodeColumns"/>
+		FROM e_platform_node a
+		<include refid="platformNodeJoins"/>
+		<where>
+			a.del_flag = #{DEL_FLAG_NORMAL}
+			<if test="platformId != null and platformId.id !=null and platformId.id != ''">
+				AND a.platform_id = #{platformId.id}
+			</if>
+			<if test="nodeName != null and nodeName != ''">
+				AND a.node_name LIKE 
+					<if test="dbName == 'oracle'">'%'||#{nodeName}||'%'</if>
+					<if test="dbName == 'mssql'">'%'+#{nodeName}+'%'</if>
+					<if test="dbName == 'mysql'">concat('%',#{nodeName},'%')</if>
+			</if>
+			<if test="nodeIp != null and nodeIp != ''">
+				AND a.node_ip LIKE 
+					<if test="dbName == 'oracle'">'%'||#{nodeIp}||'%'</if>
+					<if test="dbName == 'mssql'">'%'+#{nodeIp}+'%'</if>
+					<if test="dbName == 'mysql'">concat('%',#{nodeIp},'%')</if>
+			</if>
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY a.create_date ASC
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="findAllList" resultType="PlatformNode" >
+		SELECT 
+			<include refid="platformNodeColumns"/>
+		FROM e_platform_node a
+		<if test="platformId != null and platformId.id !=null and platformId.id != ''">
+		    a.platform_id = #{platformId.id}
+		</if>	
+		
+	</select>
+	
+	<insert id="insert" useGeneratedKeys="true" keyColumn="id"
+		keyProperty="id" parameterType="PlatformNode">
+		INSERT INTO e_platform_node(
+			
+			platform_id,
+			node_name,
+			physical_id,
+			node_type,
+			node_port,
+			node_dir,
+			node_ip,
+			node_url,
+			node_user,
+			node_password,
+			node_state,
+			etl_task_count,
+			create_by,
+			create_date,
+			update_by,
+			update_date,
+			remarks,
+			del_flag
+		) VALUES (
+			
+			#{platformId.id},
+			#{nodeName},
+			#{physicalId},
+			#{nodeType},
+			#{nodePort},
+			#{nodeDir},
+			#{nodeIp},
+			#{nodeUrl},
+			#{nodeUser},
+			#{nodePassword},
+			#{nodeState},
+			#{etlTaskCount},
+			#{createBy.id},
+			#{createDate},
+			#{updateBy.id},
+			#{updateDate},
+			#{remarks},
+			#{delFlag}
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE e_platform_node SET 	
+			
+			node_name = #{nodeName},
+			
+			node_type = #{nodeType},
+			node_port = #{nodePort},
+			node_dir = #{nodeDir},
+			node_ip = #{nodeIp},
+			node_url = #{nodeUrl},
+			node_user = #{nodeUser},
+			node_password = #{nodePassword},
+	
+			update_by = #{updateBy.id},
+			update_date = #{updateDate},
+			remarks = #{remarks}
+		WHERE id = #{id}
+	</update>
+	<update id="updateStatus">
+		UPDATE e_platform_node SET 	
+			etl_task_count = 0 ,
+			node_state = #{nodeState}
+		WHERE id = #{id}
+	</update>
+	
+	<!--物理删除-->
+	<update id="delete">
+		DELETE FROM e_platform_node
+		<choose>
+			<when test="id !=null and id != ''">
+				WHERE id = #{id}
+			</when>
+			<otherwise>
+				WHERE platform_id = #{platformId.id}
+			</otherwise>
+		</choose>
+	</update>
+	
+	<!--逻辑删除-->
+	<update id="deleteByLogic">
+		UPDATE e_platform_node SET 
+			del_flag = #{DEL_FLAG_DELETE}
+		<choose>
+			<when test="id !=null and id != ''">
+				WHERE id = #{id}
+			</when>
+			<otherwise>
+				WHERE platform_id = #{platformId.id}
+			</otherwise>
+		</choose>
+	</update>
+	
+	
+	<!-- 根据实体名称和字段名称和字段值获取唯一记录 -->
+	<select id="findUniqueByProperty" resultType="PlatformNode" statementType="STATEMENT">
+		select * FROM e_platform_node  where ${propertyName} = '${value}'
+	</select>
+	
+</mapper>

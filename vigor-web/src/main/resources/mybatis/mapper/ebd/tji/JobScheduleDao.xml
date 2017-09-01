@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.vigor.modules.tji.dao.JobScheduleDao">
+    
+	<select id="findList" resultType="JobSchedule" >
+		SELECT 
+			a.sch_id AS "schId",
+			a.track_id AS "trackId",
+			a.job_id AS "jobId",
+			a.job_name AS "jobName",
+			a.task_type AS "taskType",
+			a.statistics_day AS "statisticsDay",
+			a.schedule_time AS "scheduleTime",
+			a.again_flag AS "againFlag",
+			a.schedule_level AS "scheduleLevel",
+			a.pause_flag AS "pasuseFlag",
+			a.exec_code AS "execCode",
+			a.exec_type AS "execType",
+			b.type_name AS "typeName"
+		FROM e_job_schedule a
+		LEFT JOIN e_base_task_type b
+		ON a.task_type=b.type_id
+		<where>
+			<if test="taskType != null and taskType != -1">
+				AND a.task_type = #{taskType}
+			</if>
+			<if test="vtype != null and vtype == 'vdp'">
+				AND a.task_type in (3,4,5,6,7,8,9,10,12)		
+			</if>
+			<if test="vtype != null and vtype == 'vdi'">
+				AND a.task_type in (1,2,13)		
+			</if>
+			<if test="isAdmin == 0">
+				AND a.create_user = #{currentUser.loginName}
+			</if>
+			<if test="flag==null">
+				AND a.pause_flag = 0
+			</if>
+			<if test="flag!=null">
+				<choose>
+					<when test="flag==1">
+						AND a.exec_code = 0 and a.pause_flag=0
+					</when>
+					<when test="flag==2">
+						AND a.schedule_time > now() and a.pause_flag = 1
+					</when>
+					<otherwise>
+						<![CDATA[AND a.schedule_time < now()]]>
+					</otherwise>
+				</choose>
+			</if>
+			<if test="cStartTime != null and cEndTime!=null">
+				AND a.schedule_time BETWEEN #{cStartTime} AND #{cEndTime} 
+			</if>
+			<if test="jobName != null and jobName != ''">
+				AND a.job_name like CONCAT("%",#{jobName},"%")
+			</if>
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="getJobStatis" resultType="map">
+		SELECT
+			t1.type_id as typeId,t1.type_name as typeName,IFNULL(t2.allcount,0) as "ac",IFNULL(t2.runningcount,0) AS rc,
+		  IFNULL(t2.successcount,0) AS sc,IFNULL(t2.failcount,0) AS fc,IFNULL(t2.pausecount,0) AS pc
+		from e_base_task_type t1
+		left join 
+		(
+			SELECT
+				task_type,
+				count(IF(pause_flag=0,1,NULL)) as "allcount",
+				count(IF(exec_code=1,1,NULL)) as "runningcount",
+				count(IF(exec_code=2,1,NULL)) as "successcount",
+				count(IF(exec_code=3 or exec_code=4,1,NULL)) as "failcount",
+				count(IF(exec_code=5,1,NULL)) as "pausecount"
+			from e_job_schedule
+			where schedule_time BETWEEN #{cStartTime} and #{cEndTime}
+			AND create_user = #{currentUser.loginName}
+			group by task_type
+		) t2
+		on t1.type_id=t2.task_type
+		order by type_id
+	</select>
+	
+	<select id="getJobByScheTime" resultType="JobSchedule">
+		SELECT 
+			sch_id AS "schId",
+			track_id AS "trackId",
+			job_id AS "jobId",
+			job_name AS "jobName",
+			task_type AS "taskType",
+			statistics_day AS "statisticsDay",
+			schedule_time AS "scheduleTime",
+			again_flag AS "againFlag",
+			schedule_level AS "scheduleLevel",
+			pause_flag AS "pasuseFlag",
+			exec_code AS "execCode",
+			exec_type AS "execType",
+			create_user AS "createUser"
+		from e_job_schedule
+		where schedule_time BETWEEN #{cStartTime} and #{cEndTime}
+		AND create_user = #{currentUser.loginName}
+	</select>
+	
+	<select id="getDayReport" resultType="map">
+		SELECT
+			type_name as typeName,task_type as taskType,all_count as allCount,running_count as runningCount,success_count as successCount,
+		  	fail_count as failCount,avg_time as avgTime
+		from e_job_report
+		where statistics_day=#{date} and create_user = #{currentUser}
+	</select>
+	
+	<select id="getMonthReport" resultType="map">
+		SELECT
+			task_type as taskType,type_name as typeName,CAST(sum(all_count) as SIGNED) as allCount,CAST(sum(running_count) as SIGNED) as runningCount,
+      		CAST(sum(success_count) as SIGNED) as successCount,CAST(sum(fail_count) as SIGNED) as failCount,IFNULL(round(avg(IF(avg_time>0,avg_time,null)),2),0) as avgTime
+		from e_job_report
+		where left(statistics_day,7)=#{date} and create_user = #{currentUser}
+		group by task_type,type_name
+	</select>
+	
+	<update id="updatePauseFlag">
+		UPDATE e_job_schedule SET 	
+			pause_flag = #{pauseFlag}
+		WHERE schedule_time > now() and sch_id = #{schId}
+	</update>
+	
+	<!-- 根据实体名称和字段名称和字段值获取唯一记录 -->
+	<select id="findUniqueByProperty" resultType="JobSchedule" statementType="STATEMENT">
+		select * FROM e_job_schedule  where ${propertyName} = '${value}'
+	</select>
+	
+</mapper>

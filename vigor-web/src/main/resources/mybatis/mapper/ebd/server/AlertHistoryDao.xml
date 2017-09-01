@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.vigor.modules.server.dao.AlertHistoryDao">
+    
+	<sql id="alertHistoryColumns">
+		a.alert_id AS "alertId",
+		a.cluster_id AS "clusterId",
+		a.alert_definition_id AS "alertDefinitionId",
+		a.service_name AS "serviceName",
+		a.component_name AS "componentName",
+		a.host_name AS "hostName",
+		a.alert_instance AS "alertInstance",
+		a.alert_timestamp AS "alertTimestamp",
+		a.alert_label AS "alertLabel",
+		a.alert_state AS "alertState",
+		a.alert_text AS "alertText"
+	</sql>
+	
+	<select id="get" resultType="AlertHistory" >
+		SELECT 
+			<include refid="alertHistoryColumns"/>
+		FROM alert_history a
+		WHERE a.alert_id = #{alertId}
+	</select>
+	
+	<select id="findList" resultType="AlertHistory" >
+		SELECT 
+			<include refid="alertHistoryColumns"/>
+		FROM alert_history a
+		<where>
+			<if test="alertId !=null and alertId != ''">
+				AND a.alert_id = #{alertId}
+			</if>
+			<if test="clusterId != null and clusterId != ''">
+				AND a.cluster_id = #{clusterId}
+			</if>
+			<if test="alertDefinitionId != null and alertDefinitionId != ''">
+				AND a.alert_definition_id = #{alertDefinitionId}
+			</if>
+			<if test="serviceName != null and serviceName != ''">
+				AND a.service_name = #{serviceName}
+			</if>
+			<if test="componentName != null and componentName != ''">
+				AND a.component_name = #{componentName}
+			</if>
+			<if test="hostName != null and hostName != ''">
+				AND a.host_name = #{hostName}
+			</if>
+			<if test="alertInstance != null and alertInstance != ''">
+				AND a.alert_instance = #{alertInstance}
+			</if>
+			<if test="alertTimestamp != null and alertTimestamp != ''">
+				AND a.alert_timestamp = #{alertTimestamp}
+			</if>
+			<if test="alertLabel != null and alertLabel != ''">
+				AND a.alert_label = #{alertLabel}
+			</if>
+			<if test="alertState != null and alertState != ''">
+				AND a.alert_state = #{alertState}
+			</if>
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+				ORDER BY a.alert_timestamp ASC
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="findAllList" resultType="AlertHistory" >
+		SELECT 
+			<include refid="alertHistoryColumns"/>
+		FROM alert_history a
+		<if test="alertId !=null and alertId != ''">
+		    a.alert_id = #{alertId}
+		</if>	
+	</select>
+</mapper>

@@ -1,0 +1,331 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.vigor.modules.meta.dao.MetaRepoDao">
+    
+	<sql id="metaRepoColumns">
+		a.id AS "id",
+		a.conn_name AS "connName",
+		a.ip AS "ip",
+		a.repo_type AS "repoType",
+		a.user_name AS "userName",
+		a.user_pwd AS "userPwd",
+		a.port AS "port",
+		a.meta_type AS "metaType",
+		a.repo_name AS "repoName",
+		a.repo_desc AS "repoDesc",
+		a.repo_enable AS "enable",
+		a.update_time AS "updateDate",
+		a.create_time AS "createDate",
+		a.create_user AS "createBy.name",
+		IFNULL(tp.`share`,"N") as "share",
+		a.del_flag AS "delFlag",
+		a.repo_instance AS "repoInstance"
+	</sql>
+	
+	<sql id="admin_metaRepoColumns">
+		a.id AS "id",
+		a.conn_name AS "connName",
+		a.ip AS "ip",
+		a.repo_type AS "repoType",
+		a.user_name AS "userName",
+		a.user_pwd AS "userPwd",
+		a.port AS "port",
+		a.meta_type AS "metaType",
+		a.repo_name AS "repoName",
+		a.repo_desc AS "repoDesc",
+		a.repo_enable AS "enable",
+		a.update_time AS "updateDate",
+		a.create_time AS "createDate",
+		a.create_user AS "createBy.name",
+		a.del_flag AS "delFlag",
+		a.repo_instance AS "repoInstance"
+	</sql>
+	
+	<sql id="metaRepoJoins">
+		LEFT JOIN e_data_permission as tp ON a.id=tp.data_id AND tp.data_type='repo'
+	</sql>
+    <!-- 
+    and (tp.user_id=#{createBy.id} or 1=#{createBy.id} or tp.office_id=#{createBy.officeId}) and tp.`query`='Y'
+     -->
+	<select id="get" resultType="MetaRepo">
+		SELECT DISTINCT
+		   <include refid="admin_metaRepoColumns"/>
+		FROM e_meta_repo a
+		WHERE a.id = #{id} 
+	</select>
+	
+	<select id="findExistRepo" resultType="MetaRepo">
+		SELECT DISTINCT
+		   <include refid="admin_metaRepoColumns"/>
+		FROM e_meta_repo a 
+		where
+		a.del_flag = #{DEL_FLAG_NORMAL}
+		and a.meta_type = #{metaType}
+		AND a.ip =#{ip}
+		AND a.port =#{port}
+		AND a.repo_type = #{repoType}
+		AND a.repo_name = #{repoName}
+		limit 1
+	</select>
+	
+	
+	<select id="findListByType" resultType="MetaRepo">
+		SELECT DISTINCT
+		<if test="isAdmin==1">
+			<include refid="admin_metaRepoColumns"/>
+		</if>
+		<if test="isAdmin!=1">
+			<include refid="metaRepoColumns"/>
+		</if> 	
+		FROM e_meta_repo a
+		<if test="isAdmin!=1">
+			<include refid="metaRepoJoins"/>
+		</if> 		
+		<where>
+			a.del_flag = #{DEL_FLAG_NORMAL}
+		    AND a.repo_type = #{repoType} 
+		    and a.id in (
+		    SELECT s.repo_id FROM e_meta_store s INNER JOIN e_meta_store_pro p ON p.store_id = s.id 
+		    UNION 
+		    SELECT r.repo_id FROM e_meta_result r INNER JOIN e_meta_store_pro p ON p.store_id = r.id
+		    )
+		    <if test="isAdmin!=1">
+				and ( tp.user_id=#{updateBy.id} and tp.`query`='Y')
+			</if> 	
+		</where>
+		ORDER BY  a.update_time desc
+	</select>
+	<select id="findList" resultType="MetaRepo">
+		SELECT DISTINCT
+			<if test="isAdmin==1">
+				<include refid="admin_metaRepoColumns"/>
+			</if>
+			<if test="isAdmin!=1">
+				<include refid="metaRepoColumns"/>
+			</if> 	
+		FROM e_meta_repo a
+		<if test="isAdmin!=1">
+			<include refid="metaRepoJoins"/>
+		</if> 		
+		<where>
+			a.del_flag = #{DEL_FLAG_NORMAL}
+			<if test="metaType != null">
+				and a.meta_type = #{metaType}
+			</if> 
+			<if test="isAdmin!=1">
+				and ( tp.user_id=#{createBy.id} and tp.`query`='Y')
+			</if> 	
+			<if test="connName != null and connName != ''">
+				AND a.conn_name like 
+				<if test="dbName == 'oracle'">'%'||#{connName}||'%'</if>
+				<if test="dbName == 'mysql'">CONCAT('%', #{connName}, '%')</if>
+			</if>
+			<if test="ip != null and ip != ''">
+				AND a.ip like 
+				<if test="dbName == 'oracle'">'%'||#{ip}||'%'</if>
+				<if test="dbName == 'mysql'">CONCAT('%', #{ip}, '%')</if>
+			</if> 
+			<if test="repoType != 0">
+				AND a.repo_type = #{repoType}
+			</if> 
+			<if test="vtype != null and vtype == 'vdp'">
+				AND a.repo_type in (3,5,11)
+			</if>
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+			ORDER BY  a.update_time desc
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="findAllList" resultType="MetaRepo">
+		SELECT DISTINCT
+			<if test="isAdmin==1">
+				<include refid="admin_metaRepoColumns"/>
+			</if>
+			<if test="isAdmin!=1">
+				<include refid="metaRepoColumns"/>
+			</if> 	
+		FROM e_meta_repo a
+		<if test="isAdmin!=1">
+			<include refid="metaRepoJoins"/>
+		</if> 		
+		<where>
+			a.del_flag = #{DEL_FLAG_NORMAL}
+			AND a.meta_type = #{metaType}
+			<if test="isAdmin!=1">
+				and ( tp.user_id=#{createBy.id} and tp.`query`='Y')
+			</if> 
+			<if test="metaType != null and metaType != ''">
+				AND a.meta_type = #{metaType}
+			</if>
+			<if test="repoType != 0">
+				AND a.repo_type = #{repoType}
+			</if> 
+			<if test="vtype != null and vtype == 'vdp'">
+				AND a.repo_type in (3,5,11)
+			</if> 
+		</where>
+		ORDER BY  a.update_time desc
+	</select>
+	
+	<insert id="insert"  useGeneratedKeys="true" keyColumn="id"
+		keyProperty="id" parameterType="MetaRepo">
+		INSERT INTO e_meta_repo(
+			
+			conn_name,
+			ip,
+			repo_type,
+			user_name,
+			user_pwd,
+			port,
+			meta_type,
+			repo_name,
+			repo_desc,
+			update_time,
+			create_time,
+			create_user,
+			del_flag,
+			repo_instance
+		) VALUES (
+			
+			#{connName},
+			#{ip},
+			#{repoType},
+			#{userName},
+			#{userPwd},
+			#{port},
+			#{metaType},
+			#{repoName},
+			#{repoDesc},
+			#{updateDate},
+			#{createDate},
+			#{createBy.name},
+			#{delFlag},
+			#{repoInstance}
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE e_meta_repo SET 	
+			conn_name = #{connName},
+			ip = #{ip},
+			repo_type = #{repoType},
+			user_name = #{userName},
+			<if test="userPwd != null and userPwd != ''">
+				user_pwd = #{userPwd},
+			</if> 
+			port = #{port},
+			meta_type = #{metaType},
+			repo_name = #{repoName},
+			repo_desc = #{repoDesc},
+			update_time = #{updateDate},
+			del_flag = #{delFlag},
+			repo_instance = #{repoInstance}
+		WHERE id = #{id}
+	</update>
+	
+	
+	<!--物理删除-->
+	<update id="delete">
+		DELETE FROM e_meta_repo
+		WHERE id = #{id}
+	</update>
+	
+	<!--逻辑删除-->
+	<update id="deleteByLogic">
+		UPDATE e_meta_repo SET 
+			del_flag = #{DEL_FLAG_DELETE}
+		WHERE id = #{id}
+	</update>
+	
+	
+	<!-- 根据实体名称和字段名称和字段值获取唯一记录 -->
+	<select id="findUniqueByProperty" resultType="MetaRepo" statementType="STATEMENT">
+		select * FROM e_meta_repo  where ${propertyName} = '${value}'
+	</select>
+	
+	<update id="enable" parameterType="string">
+		UPDATE `e_meta_repo` SET `repo_enable`=1 WHERE (`id`=#{id})
+	</update>
+	<update id="disable" parameterType="string">
+		UPDATE `e_meta_repo` SET `repo_enable`=0 WHERE (`id`=#{id})
+	</update>
+	
+	
+	<select id="findListByRepoType" parameterType="MetaRepo" resultType="map">
+		SELECT DISTINCT
+			a.id AS "id",
+			a.conn_name AS "connName",
+			a.ip AS "ip",
+			a.repo_type AS "repoType",
+			a.user_name AS "userName",
+			a.port AS "port",
+			a.repo_name AS "repoName",
+			a.repo_instance AS "repoInstance"
+		FROM e_meta_repo a
+		<if test="isAdmin!=1">
+			<include refid="metaRepoJoins"/>
+		</if> 		
+		<where>
+			a.del_flag = #{DEL_FLAG_NORMAL}
+			AND a.meta_type = #{metaType}
+			<if test="isAdmin!=1">
+				and ( tp.user_id=#{createBy.id} and tp.`query`='Y')
+			</if> 	
+			<if test="connName != null and connName != ''">
+				AND a.conn_name like 
+					<if test="dbName == 'oracle'">'%'||#{connName}||'%'</if>
+					<if test="dbName == 'mysql'">CONCAT('%', #{connName}, '%')</if>
+			</if>
+			<if test="ip != null and ip != ''">
+				AND a.ip like 
+				<if test="dbName == 'oracle'">'%'||#{ip}||'%'</if>
+				<if test="dbName == 'mysql'">CONCAT('%', #{ip}, '%')</if>
+			</if> 
+			<if test="repoType != 0">
+				AND a.repo_type = #{repoType}
+			</if>  
+		</where>
+		ORDER BY  a.update_time desc
+	</select>
+	
+	<select id="getHiveDataType" resultType="string">
+		SELECT
+			d.hive_data_type
+		FROM
+			e_data_typedic AS d
+		WHERE
+			d.db_data_type = #{dataType}
+		AND 
+			d.type = #{type}
+		LIMIT 1	
+	</select>
+ 	
+ 	<select id="getHdfsAndFtpSources" resultType="MetaRepo">
+ 		select <include refid="admin_metaRepoColumns"/> from e_meta_repo a
+ 		<if test="isAdmin != 1">
+			<include refid="metaRepoJoins"/>
+		</if>
+ 		where a.del_flag = 0 and a.conn_name not like '${%'
+ 		<if test="isAdmin!=1">
+			and ( tp.user_id=#{createBy.id} and tp.`query`='Y')
+		</if>
+ 		<if test="metaTypes != null">
+ 			and a.meta_type in
+ 			<foreach collection="metaTypes" item="item" separator="," open="(" close=")">
+ 				#{item}
+ 			</foreach>
+ 		</if>
+ 		<if test="repoTypes != null">
+ 			and a.repo_type in
+ 			<foreach collection="repoTypes" item="item" separator="," open="(" close=")">
+ 				#{item}
+ 			</foreach>
+ 		</if>
+ 	</select>
+</mapper>

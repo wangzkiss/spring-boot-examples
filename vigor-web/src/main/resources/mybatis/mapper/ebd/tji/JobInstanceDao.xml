@@ -1,0 +1,202 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.vigor.modules.tji.dao.JobInstanceDao">
+    
+	<sql id="jobInstanceColumns">
+		a.track_id AS "trackId",
+		a.job_id AS "jobId",
+		a.job_name AS "jobName",
+		a.task_type AS "taskType",
+		a.schedule_time AS "scheduleTime",
+		a.exec_time AS "execTime",
+		a.exec_code AS "execCode",
+		a.exec_desc AS "execDesc",
+		a.resp_time AS "respTime",
+		a.date_params AS "dateParams",
+		a.act_track_id AS "actTrackId",
+		a.again_flag AS "againFlag",
+		a.exec_type AS "execType",
+		a.input_num AS "inputNum",
+		a.output_num AS "outputNum",
+		a.job_progress_info AS "jobProgressInfo"
+	</sql>
+	
+	<select id="getById" resultType="JobInstance" >
+		SELECT 
+			<include refid="jobInstanceColumns"/>,
+			b.type_name as "typeName"
+		FROM ${tableName} a
+		LEFT JOIN e_base_task_type b
+		on a.task_type=b.type_id
+		WHERE a.track_id = #{trackId}
+	</select>
+	
+	<select id="findList" resultType="JobInstance" >
+		<if test="secTableName==null">
+		SELECT 
+			<include refid="jobInstanceColumns"/>,
+			b.type_name as "typeName"
+		FROM ${tableName} a
+		LEFT JOIN e_base_task_type b
+		on a.task_type=b.type_id
+		<where>
+			<if test="verify != null and verify == 1">
+				AND (input_num=0 OR a.input_num!=a.output_num) AND a.task_type in(1,2) 
+			</if>
+			<if test="cStartTime != null and cEndTime != null">
+				AND a.schedule_time BETWEEN #{cStartTime} AND #{cEndTime} 
+			</if>
+			<if test="cStartTime != null and cEndTime == null">
+				AND a.schedule_time > #{cStartTime} 
+			</if>
+			<if test="cStartTime == null and cEndTime != null">
+				<![CDATA[AND a.schedule_time < #{cEndTime}]]>
+			</if>
+			AND a.act_track_id=-1
+			<if test="againFlag != null and againFlag != -1">
+				AND a.again_flag = #{againFlag}
+			</if>
+			<if test="isAdmin == 0">
+				AND a.create_user = #{currentUser.loginName}
+			</if>
+			<if test="execCode != null and execCode != -1">
+				<choose>
+					<when test="execCode==3">
+						AND a.exec_code in (3,4)
+					</when>
+					<otherwise>
+						AND a.exec_code = #{execCode}
+					</otherwise>
+				</choose>
+			</if>
+			<if test="taskType != null and taskType != -1">
+				AND a.task_type = #{taskType}
+			</if>
+			<if test="jobName != null and jobName != ''">
+				AND a.job_name like CONCAT("%",#{jobName},"%")
+			</if>
+			<if test="vtype != null and vtype == 'vdi'">
+				AND a.task_type in (1,2,13)
+			</if>
+			<if test="vtype != null and vtype == 'vdp'">
+				AND a.task_type in (3,4,5,6,7,8,9,10,12)
+			</if>
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+			</otherwise>
+		</choose>
+		</if>
+		<if test="secTableName!=null">
+		<!-- 跨表union -->
+		select 
+		<include refid="jobInstanceColumns"/>,
+		b.type_name as "typeName"
+		from (
+		select * from ${tableName} union select * from ${secTableName}
+		) as a
+		LEFT JOIN e_base_task_type b
+		on a.task_type=b.type_id
+		<where>
+			<if test="verify != null and verify == 1">
+				AND (input_num=0 OR a.input_num!=a.output_num) AND a.task_type in(1,2) 
+			</if>
+			<if test="cStartTime != null and cEndTime != null">
+				AND a.schedule_time BETWEEN #{cStartTime} AND #{cEndTime} 
+			</if>
+			<if test="cStartTime != null and cEndTime == null">
+				AND a.schedule_time > #{cStartTime} 
+			</if>
+			<if test="cStartTime == null and cEndTime != null">
+				<![CDATA[AND a.schedule_time < #{cEndTime}]]>
+			</if>
+			AND a.act_track_id=-1
+			<if test="againFlag != null and againFlag != -1">
+				AND a.again_flag = #{againFlag}
+			</if>
+			<if test="isAdmin == 0">
+				AND a.create_user = #{currentUser.loginName}
+			</if>
+			<if test="execCode != null and execCode != -1">
+				<choose>
+					<when test="execCode==3">
+						AND a.exec_code in (3,4)
+					</when>
+					<otherwise>
+						AND a.exec_code = #{execCode}
+					</otherwise>
+				</choose>
+			</if>
+			<if test="taskType != null and taskType != -1">
+				AND a.task_type = #{taskType}
+			</if>
+			<if test="jobName != null and jobName != ''">
+				AND a.job_name like CONCAT("%",#{jobName},"%")
+			</if>
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+			</otherwise>
+		</choose>
+		</if>
+	</select>
+	
+	<select id="findListForAct" resultType="JobInstance" >
+		SELECT 
+			<include refid="jobInstanceColumns"/>,
+			b.type_name as "typeName"
+		FROM ${tableName} a
+		LEFT JOIN e_base_task_type b
+		on a.task_type=b.type_id
+		where act_track_id=#{trackId}
+	</select>
+	
+	<select id="getEtlLog" resultType="map" >
+		SELECT 
+			a.lines_input as inputNum,a.lines_output as outputNum,a.log_field as logField
+		FROM log_jobs a
+		WHERE a.track_id = #{trackId}
+	</select>
+	
+	<select id="statisticByTaskType" resultType="map" parameterType="JobInstance">
+		select IFNULL(count(a.track_id),0) as "num",a.exec_code as "execCode" from e_job_instance a where 1 = 1
+		<if test="execCode != null">
+			AND a.exec_code = #{execCode}
+		</if>
+		<if test="isAdmin == 0">
+				AND a.create_user = #{currentUser.loginName}
+			</if>
+		<if test="cStartTime != null and cStartTime != ''">
+			<![CDATA[AND a.schedule_time >= #{cStartTime}]]>
+		</if>
+		<if test="cStartTime != null and cStartTime != ''">
+			<![CDATA[AND a.schedule_time <= #{cEndTime}]]>
+		</if>
+		group by a.exec_code
+	</select>
+	
+	<select id="statistiTop10" resultType="map" parameterType="JobInstance">
+		select * from (
+			select 
+			<include refid="jobInstanceColumns"/>
+			,IFNULL(unix_timestamp(a.resp_time),0)-IFNULL(unix_timestamp(a.exec_time),0) as "timeConsuming" from e_job_instance a
+			where a.exec_code in(2,3,4)
+			<if test="cStartTime != null and cStartTime != ''">
+				<![CDATA[AND a.schedule_time >= #{cStartTime}]]>
+			</if>
+			<if test="cEndTime != null and cEndTime != ''">
+				<![CDATA[AND a.schedule_time <= #{cEndTime}]]>
+			</if>
+		) b order by b.timeConsuming desc limit 10
+	</select>
+	
+	<update id="updateInstanceStatus">
+		update e_job_instance set exec_code = #{execCode} where track_id = #{trackId}
+	</update>
+</mapper>

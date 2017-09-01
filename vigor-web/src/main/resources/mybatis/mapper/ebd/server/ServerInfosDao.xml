@@ -1,0 +1,211 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.vigor.modules.server.dao.ServerInfosDao">
+
+	<sql id="serverInfosColumns">
+		a.host_id AS "id",
+		a.host_name AS "hostName",
+		a.cpu_count AS "cpuCount",
+		a.cpu_info AS "cpuInfo",
+		a.discovery_status AS "discoveryStatus",
+		a.host_attributes AS "hostAttributes",
+		a.ipv4 AS "ipv4",
+		a.ipv6 AS "ipv6",
+		a.last_registration_time AS "lastRegistrationTime",
+		a.os_arch AS "osArch",
+		a.os_info AS "osInfo",
+		a.os_type AS "osType",
+		a.ph_cpu_count AS "phCpuCount",
+		a.public_host_name AS "publicHostName",
+		a.rack_info AS "rackInfo",
+		FORMAT (a.total_mem/(1024*1024),1) AS "totalMem"
+		<!-- a.user_name AS "userName",
+		a.user_pwd AS "userPwd",
+		a.port AS "port"	 -->
+	</sql>
+	
+	<sql id="serverInfosJoins">
+	</sql>
+	
+    
+	<select id="get" resultType="ServerInfos" >
+		SELECT 
+			<include refid="serverInfosColumns"/>
+		FROM hosts a
+		<include refid="serverInfosJoins"/>
+		WHERE a.host_id = #{id}
+	</select>
+	
+	<select id="findList" resultType="ServerInfos" >
+		SELECT 
+			<include refid="serverInfosColumns"/>
+		FROM hosts a
+		<include refid="serverInfosJoins"/>
+		<where>	
+			<if test="hostName != null and hostName != ''">
+				AND a.host_name LIKE 
+					<if test="dbName == 'oracle'">'%'||#{hostName}||'%'</if>
+					<if test="dbName == 'mssql'">'%'+#{hostName}+'%'</if>
+					<if test="dbName == 'mysql'">concat('%',#{hostName},'%')</if>
+			</if>
+			<if test="ip != null and ip != ''">
+				AND a.ipv4 LIKE 
+					<if test="dbName == 'oracle'">'%'||#{ip}||'%'</if>
+					<if test="dbName == 'mssql'">'%'+#{ip}+'%'</if>
+					<if test="dbName == 'mysql'">concat('%',#{ip},'%')</if>
+			</if>
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="findAllList" resultType="ServerInfos" >
+		SELECT 
+			<include refid="serverInfosColumns"/>
+		FROM hosts a
+		<include refid="serverInfosJoins"/>
+		<where>		
+		</where>		
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+			</otherwise>
+		</choose>
+	</select>
+	
+	
+	
+	
+	
+	<insert id="insert">
+		INSERT INTO hosts(	
+			host_name,
+			ipv4,
+			rack_info
+			<!-- user_name,
+			user_pwd,
+			port, -->
+		) VALUES (
+			#{hostName},
+			#{ipv4},
+			#{rackInfo}
+			<!-- #{userName},
+			#{userPwd},
+			#{port} -->
+		)
+	</insert>
+	<update id="update">
+		UPDATE hosts SET 	
+			host_name = #{hostName},
+			ipv4 = #{ipv4},
+			<!-- user_name = #{userName},
+			user_pwd = #{userPwd},
+			port = #{port}, -->
+			rackInfo = #{rackInfo}
+		WHERE host_id = #{id}
+	</update>
+	
+	<!--物理删除-->
+	<update id="delete">
+		DELETE FROM hosts
+		WHERE host_id = #{id}
+	</update>
+	
+	<!--逻辑删除-->
+	<update id="deleteByLogic">
+		UPDATE hosts SET 
+			del_flag = #{DEL_FLAG_DELETE}
+		WHERE host_id = #{id}
+	</update>
+	
+	
+	<select id="findComponentByHostId" parameterType="String" resultType="map" >
+		SELECT
+		host_id as id,
+		lower(current_state) as status,
+		lower(service_name) as serviceName ,
+		lower(component_name) as componentName,
+		lower(version) as version
+		FROM
+		hostcomponentstate
+		WHERE host_id=#{id}
+	</select>
+	
+	<select id="findComponentByServerName" parameterType="Component" resultType="Component">
+		SELECT
+			lower(hp.service_name) AS serviceName,
+			lower(hp.component_name) AS componentName,
+			h.ipv4 AS ip,
+			h.host_name AS hostName,
+			lower(hp.current_state) AS currentState,
+			hp.host_id AS id,
+			h.cpu_count AS cpuCount,
+			FORMAT (h.total_mem / (1024 * 1024),1) AS totalMem
+		FROM
+			hostcomponentstate AS hp
+		LEFT JOIN `hosts` AS h ON hp.host_id = h.host_id
+		   <where>		
+				<if test="serviceName != null and serviceName != ''">
+				hp.service_name = UPPER(#{serviceName})
+				</if>
+				<if test="hostName != null and hostName != ''">
+				AND h.host_name LIKE 
+					<if test="dbName == 'oracle'">'%'||#{hostName}||'%'</if>
+					<if test="dbName == 'mssql'">'%'+#{hostName}+'%'</if>
+					<if test="dbName == 'mysql'">concat('%',#{hostName},'%')</if>
+				</if>
+				<if test="ip != null and ip != ''">
+				AND h.ipv4 LIKE 
+					<if test="dbName == 'oracle'">'%'||#{ip}||'%'</if>
+					<if test="dbName == 'mssql'">'%'+#{ip}+'%'</if>
+					<if test="dbName == 'mysql'">concat('%',#{ip},'%')</if>
+				</if>
+				<if test="componentName != null and componentName != ''">
+				AND hp.component_name LIKE UPPER(
+					<if test="dbName == 'oracle'">'%'||#{componentName}||'%'</if>
+					<if test="dbName == 'mssql'">'%'+#{componentName}+'%'</if>
+					<if test="dbName == 'mysql'">concat('%',#{componentName},'%')</if>
+					)
+			   </if>
+			</where>		
+			<choose>
+				<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+					ORDER BY ${page.orderBy}
+				</when>
+				<otherwise>
+					ORDER BY
+					hp.component_name
+				</otherwise>
+			</choose>
+	</select>
+	<select id="findCluseServer" resultType="Component">
+		SELECT DISTINCT
+			if(hp.service_name='YARN' OR hp.service_name='HDFS',hp.service_name,lower(hp.service_name))  AS serviceName 
+		FROM
+		hostcomponentstate hp
+	</select>
+	<select id="findNewByServerName" parameterType="string" resultType="ServerInfos">
+	   SELECT 
+	     <include refid="serverInfosColumns"/>
+	   FROM `hosts` as a
+	    WHERE host_id NOT IN(
+			SELECT
+			host_id
+			FROM
+			hostcomponentstate 
+			WHERE  component_name= UPPER(#{name})
+			)
+	</select>
+	<select id="findByHostName" resultType="ServerInfos">
+		SELECT 
+	     <include refid="serverInfosColumns"/>
+	   	FROM `hosts` as a WHERE a.host_name = #{hostName}
+	</select>
+</mapper>

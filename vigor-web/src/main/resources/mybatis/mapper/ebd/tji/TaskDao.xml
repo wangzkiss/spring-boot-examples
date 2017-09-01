@@ -1,0 +1,480 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="cn.vigor.modules.tji.dao.TaskDao">
+    
+	<sql id="taskColumns">
+		a.task_id AS "id",
+		a.task_id AS "taskId",
+		a.task_name AS "taskName",
+		a.task_desc AS "taskDesc",
+		a.task_type AS "taskType",
+		a.create_time AS "createTime",
+		a.create_user AS "createUser",
+		a.come_from AS "comeFrom",
+		a.xml_data AS "xmlData",
+		a.third_task_id AS "thirdTaskId",
+		a.group_id AS "groupId"
+	</sql>
+	
+	<sql id="functionColumns">
+		a.function_name AS "name",
+		a.function_name AS "desc",
+		a.function_class AS "functionClassName",
+		a.jar_id AS "jarId",
+		a.rule_type AS "ruleType",
+		a.rule_expression AS "ruleExpression",
+		a.function_type AS "type",
+		a.expansion_field AS "expansionField",
+		a.param_nums AS "paraNumber",
+		a.param_type AS "paraType"
+		a.return_type AS "returnType"
+		a.username AS "userName"
+		a.password AS "passWord"
+		a.ip AS "ip"
+		a.port AS "port"
+		a.dbname AS "dbname"
+		a.dbtype AS "dbtype"
+	</sql>
+	
+	<select id="get" resultType="Task" >
+		SELECT 
+			<include refid="taskColumns"/>
+		FROM e_task a
+		WHERE a.task_id = #{id}
+	</select>
+	
+	<select id="getTaskInfoById" resultType="TaskDetail" >
+		SELECT 
+			<include refid="taskColumns"/>,
+			b.group_name AS "groupName",
+			c.type_name AS "typeName"
+		FROM e_task a
+		LEFT JOIN e_task_group b
+		ON a.group_id=b.group_id 
+		LEFT JOIN e_base_task_type c
+		ON a.task_type=c.type_id
+		WHERE a.task_id = #{taskId}
+	</select>
+	
+	<select id="findList" resultType="Task" >
+		SELECT 
+			<include refid="taskColumns"/>,
+			b.group_name AS "groupName",
+			c.type_name AS "typeName"
+		FROM e_task a
+		LEFT JOIN e_task_group b
+		ON a.group_id=b.group_id
+		LEFT JOIN e_base_task_type c
+		ON a.task_type=c.type_id
+		<where>
+			<if test="startTime != null and endTime != null">
+				AND a.create_time BETWEEN #{startTime} AND #{endTime} 
+			</if>
+			<if test="startTime == null and endTime != null">
+				<![CDATA[AND a.create_time < #{endTime}]]>
+			</if>
+			<if test="startTime != null and endTime == null">
+				AND a.create_time > #{startTime}
+			</if>
+			<if test="taskName != null and taskName != ''">
+				AND a.task_name like CONCAT("%",#{taskName},"%")
+			</if>
+			<if test="groupName != null and groupName != ''">
+				AND b.group_name like CONCAT("%",#{groupName},"%")
+			</if>
+			<if test="groupId != null and groupId != 0">
+				AND a.group_id = #{groupId}
+			</if>
+			<if test="isAdmin == 0">
+				AND a.create_user = #{currentUser.loginName}
+			</if>
+			<if test="taskType != null and taskType != -1">
+				AND a.task_type = #{taskType}
+			</if>
+			<if test="taskFlag == 1">
+				AND a.task_type in (1,2,13)
+			</if>
+			<if test="taskFlag == 2">
+				AND a.task_type in (3,4,5,6,7,8,10,11,12)
+			</if>
+			<if test="taskFlag == 3">
+				AND a.task_type in (9)
+			</if>
+			<if test="taskFlag == 4">
+				AND a.task_type in (1,2)
+			</if>
+			<if test="taskFlag == 5">
+				AND a.task_type in (4,5)
+			</if>
+		</where>
+		<choose>
+			<when test="page !=null and page.orderBy != null and page.orderBy != ''">
+				ORDER BY ${page.orderBy}
+			</when>
+			<otherwise>
+			</otherwise>
+		</choose>
+	</select>
+	
+	<select id="getTaskForAct" resultType="string" parameterType="map">
+		select task_name
+		from e_task t1
+		where task_type != 9
+		<if test="userName != '' and userName != 'admin'">
+			and create_user=#{userName}
+		</if>
+		<if test="taskType != 0">
+			and task_type=#{taskType}
+		</if>
+		<if test="taskName != ''">
+			and task_name like CONCAT("%",#{taskName},"%")
+		</if>
+		order by create_time desc
+		limit #{rowNo}, #{pageSize}
+	</select>
+	
+	<select id="getTaskForActCount" resultType="int" parameterType="map">
+		select count(1)
+		from e_task
+		where task_type != 9
+		<if test="userName != 'admin'">
+			and create_user=#{userName}
+		</if>
+		<if test="taskType != 0">
+			and task_type=#{taskType}
+		</if>
+		<if test="taskName != ''">
+			and task_name like CONCAT("%",#{taskName},"%")
+		</if>
+	</select>
+	
+	<select id="getTaskByName" resultType="Task" parameterType="string">
+		select
+			task_id AS "taskId",
+			task_name AS "taskName",
+			task_desc AS "taskDesc",
+			task_type AS "taskType",
+			create_time AS "createDate",
+			create_user AS "createUser",
+			come_from AS "comeFrom",
+			xml_data AS "xmlData",
+			third_task_id AS "thirdTaskId"
+		from e_task
+		where task_name = #{taskName}
+	</select>
+	
+	<select id="getSTaskCountByName" resultType="int" parameterType="string">
+		select
+			count(1)
+		from e_task_relation
+		where s_task_name = #{taskName}
+	</select>
+	
+	<select id="getTaskByGroupId" resultType="Task" parameterType="int">
+		SELECT 
+			a.task_id AS "taskId",
+			a.task_name AS "taskName",
+			a.group_id AS "groupId",
+			a.task_type AS "taskType",
+			create_user AS "createUser"
+		FROM e_task a
+		WHERE a.group_id = #{groupId}
+	</select>
+	
+	<select id="getISourceList" resultType="map" parameterType="int">
+		select 
+			t2.id as "id",t2.source_name as "name",t2.source_type as "type",t2.delimiter as "delimiter",
+			t2.source_desc as "desc",t2.source_file as "file",t3.id as "repoId",t3.ip as "ip",t3.port as "port",
+			t3.user_name as "user",t3.user_pwd as "password",t3.repo_name as "dir",t3.max_connection as "maxConnection",t4.type_name as "typeName"
+		from (select input_id from e_task_input where task_id=#{taskId} and input_type=0) t1
+		left join e_meta_source t2
+		on t1.input_id=t2.id
+		left join e_meta_repo t3
+		on t2.repo_id=t3.id
+		left join e_base_source_type t4
+		on t2.source_type=t4.type_id
+	</select>
+	
+	<select id="getOStoreList" resultType="map" parameterType="int">
+		select 
+			t2.id as "id",t2.store_name as "name",t2.store_type as "type",t2.delimiter as "delimiter",t2.store_external as "external",
+		    t2.store_desc as "desc",t2.store_file as "file",t3.ip as "ip",t3.port as "port",t2.hdfs_info as "hdfsInfo",
+		    t3.user_name as "user",t3.user_pwd as "password",t3.repo_name as "dir",t4.type_name as "typeName",t2.repo_id as "repoId"
+		from (select output_id from e_task_output where task_id=#{taskId} and output_type=1) t1
+		left join e_meta_store t2
+		on t1.output_id=t2.id
+		left join e_meta_repo t3
+		on t2.repo_id=t3.id
+		left join e_base_store_type t4
+		on t2.store_type=t4.type_id
+	</select>
+	
+	<select id="getIStoreList" resultType="map" parameterType="int">
+		select 
+			t2.id as "id",t2.store_name as "name",t2.store_type as "type",t2.delimiter as "delimiter",t2.store_external as "external",
+		    t2.store_desc as "desc",t2.store_file as "file",t3.ip as "ip",t3.port as "port",t2.hdfs_info as "hdfsInfo",
+		    t3.user_name as "user",t3.user_pwd as "password",t3.repo_name as "dir",t4.type_name as "typeName"
+		from (select input_id from e_task_input where task_id=#{taskId} and input_type=1) t1
+		left join e_meta_store t2
+		on t1.input_id=t2.id
+		left join e_meta_repo t3
+		on t2.repo_id=t3.id
+		left join e_base_store_type t4
+		on t2.store_type=t4.type_id
+	</select>
+	
+	<select id="getOResultList" resultType="map" parameterType="int">
+		select 
+			t2.id as "id",t2.result_name as "name",t2.result_type as "type",t2.delimiter as "delimiter",
+		    t2.result_desc as "desc",t2.result_file as "file",t3.ip as "ip",t3.port as "port",
+		    t3.user_name as "user",t3.user_pwd as "password",t3.repo_name as "dir",t4.type_name as "typeName"
+		from (select output_id from e_task_output where task_id=#{taskId} and output_type=0) t1
+		left join e_meta_result t2
+		on t1.output_id=t2.id
+		left join e_meta_repo t3
+		on t2.repo_id=t3.id
+		left join e_base_result_type t4
+		on t2.result_type=t4.type_id
+	</select>
+	
+	<select id="getOType" resultType="int" parameterType="int">
+		select output_type from e_task_output where task_id=#{taskId} limit 1
+	</select>
+	
+	<select id="getFunctionList" resultType="map" parameterType="int">
+		select 
+			t2.function_name as "functionName",t2.function_class AS "functionClass",t2.jar_id AS "jarId",
+		    t2.expansion_field as "expansionField",t1.function_param as "functionParam"
+		from e_task_function t1
+		left join e_function t2
+		on t1.function_id=t2.function_id
+		where t1.task_id=#{taskId}
+	</select>
+	
+	<select id="getJobCountByTaskId" resultType="int" parameterType="int">
+		select count(1) from e_job where task_id=#{taskId}
+	</select>
+	
+	<select id="getFunIdByName" resultType="int" parameterType="string">
+		select function_id from e_function where function_name=#{functionName}
+	</select>
+	
+	<select id="getDataPermission" resultType="string">
+		SELECT
+			`query`
+		from e_data_permission
+		where data_type=#{dataType}
+		and user_id=#{userId}
+		and data_id=#{dataId}
+	</select>
+	
+	<select id="getTaskIdByXmlData" resultType="int">
+		SELECT
+			task_id
+		from e_task
+		where xml_data=#{xmlData}
+	</select>
+	
+	<insert id="insert" parameterType="Task" useGeneratedKeys="true" keyColumn="task_id" keyProperty="taskId">
+		INSERT INTO e_task(
+			task_name,
+			task_desc,
+			task_type,
+			create_time,
+			create_user,
+			group_id,
+			come_from,
+			xml_data,
+			third_task_id
+		) VALUES (
+			#{taskName},
+			#{taskDesc},
+			#{taskType},
+			now(),
+			#{createUser},
+			#{groupId},
+			#{comeFrom},
+			#{xmlData},
+			#{thirdTaskId}
+		)
+	</insert>
+	
+	<insert id="insertTaskRelation">
+		insert into e_task_relation(
+			task_id,
+			s_task_name
+		) values (
+			#{taskId},
+			#{sTaskName}
+		)
+	</insert>
+	
+	<update id="update">
+		UPDATE e_task SET 	
+			task_name = #{taskName},
+			task_desc = #{taskDesc},
+			task_type = #{taskType},
+			<!-- create_time = #{createDate}, -->
+			create_user = #{createUser},
+			come_from = #{comeFrom},
+			xml_data = #{xmlData},
+			third_task_id = #{thirdTaskId},
+			group_id = #{groupId}
+		WHERE task_id = #{taskId}
+	</update>
+	
+	<update id="updateGroup">
+		UPDATE e_task SET 	
+			group_id = #{groupId}
+		WHERE task_id = #{taskId}
+	</update>
+	
+	<update id="updateJobGroup">
+		UPDATE e_job SET 	
+			group_id = #{groupId}
+		WHERE task_id = #{taskId}
+	</update>
+	
+	<update id="delete">
+		DELETE FROM e_task
+		WHERE task_id = #{taskId}
+	</update>
+	
+	<update id="delTaskRelation">
+		DELETE FROM e_task_relation
+		WHERE task_id = #{taskId}
+	</update>
+	
+	<update id="delTaskOutPut">
+		DELETE FROM e_task_output
+		WHERE task_id = #{taskId}
+	</update>
+	
+	<update id="delTaskInPut">
+		DELETE FROM e_task_input
+		WHERE task_id = #{taskId}
+	</update>
+	
+	<update id="delTaskFunction">
+		DELETE FROM e_task_function
+		WHERE task_id = #{taskId}
+	</update>
+	
+	<!-- 根据实体名称和字段名称和字段值获取唯一记录 -->
+	<select id="findUniqueByProperty" resultType="Task" statementType="STATEMENT">
+		select * FROM e_task  where ${propertyName} = '${value}'
+	</select>
+	
+	<insert id="insertTaskOutput">
+		insert into e_task_output(
+			output_id,
+			task_id,
+			output_type
+		) values (
+			#{ouputId},
+			#{taskId},
+			#{outputType}
+		)
+	</insert>
+	
+	<update id="updateTaskOutput" parameterType="map">
+		UPDATE e_task_output SET 	
+			output_id = #{ouputId}
+		WHERE task_id = #{taskId}
+	</update>
+	
+	<update id="updateThirdTaskId" parameterType="map">
+		UPDATE e_task SET 	
+			third_task_id = #{processId}
+		WHERE task_id = #{taskId}
+	</update>
+	
+	<select id="countTaskOutput" resultType="int">
+		SELECT count(task_id) from e_task_output WHERE task_id = #{taskId}
+	</select>
+	
+	<select id="countTaskInput" resultType="int">
+		SELECT count(task_id) from e_task_Input WHERE task_id = #{taskId}
+	</select>
+	
+	<update id="updateTaskInput" parameterType="map">
+		UPDATE e_task_input SET 	
+			input_id = #{inputId}
+		WHERE task_id = #{taskId}
+	</update>
+	
+	<insert id="insertTaskInput" parameterType="map">
+		insert into e_task_input(
+			input_id,
+			task_id,
+			input_type
+		) values (
+			#{inputId},
+			#{taskId},
+			#{inputType}
+		)
+	</insert>
+	
+	<insert id="insertTaskFunction" parameterType="Task">
+		insert into e_task_function(
+			task_id,
+			function_id,
+			function_param
+		) values (
+			#{taskId},
+			#{functionId},
+			#{functionParam}
+		)
+	</insert>
+	
+	<update id="updateTaskFunction" parameterType="Task">
+		UPDATE e_task_function SET 	
+			function_param = #{functionParam}
+		WHERE task_id = #{taskId} and function_id = #{functionId}
+	</update>
+	
+	<select id="countTaskFunction" resultType="int">
+		SELECT count(task_id) from e_task_function WHERE task_id = #{taskId} and function_id = #{functionId}
+	</select>
+	
+	<resultMap type="TaskOutput" id="taskOutputMap">
+		<id property="outputId" column="output_id" />
+		<result property="taskId" column="task_id" />
+		<result property="outputType" column="output_type" />
+	</resultMap>
+	
+	<select id="getTaskOutputByTaskId" resultMap="taskOutputMap" parameterType="int">
+		SELECT e.output_id, e.task_id, e.output_type FROM e_task_output e where e.task_id=#{taskId}
+	</select>
+	
+	<resultMap type="TaskInput" id="taskInputMap">
+		<id property="inputId" column="input_id" />
+		<result property="taskId" column="task_id" />
+		<result property="intputType" column="input_type" />
+	</resultMap>
+	
+	<select id="getTaskInputByTaskId" resultMap="taskInputMap" parameterType="int">
+		SELECT e.input_id, e.task_id, e.input_type FROM e_task_input e where e.task_id=#{taskId}
+	</select>
+	
+	<resultMap type="TaskBaseType" id="taskTypeMap">
+		<id property="typeId" column="type_id" />
+		<result property="typeName" column="task_name" />
+		<result property="status" column="status" />
+	</resultMap>
+	
+	<select id="getAllTaskType" resultMap="taskTypeMap" >
+		SELECT * from e_base_task_type
+	</select>
+	
+	<resultMap type="TaskFunction" id="taskFunctionMap">
+		<id property="taskId" column="task_id" />
+		<result property="functionId" column="function_id" />
+		<result property="functionParam" column="function_param" />
+	</resultMap>
+	
+	<select id="findETFunctionByTaskId" resultMap="taskFunctionMap" parameterType="int">
+		select * FROM e_task_function etf where etf.task_id = #{taskId}
+	</select>
+	
+</mapper>
